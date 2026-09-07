@@ -345,6 +345,78 @@ tr.taskrow:hover .rowtools{opacity:1}
   .nowrow .status{grid-column:1/-1;text-align:left}
 }
 
+/* ===================== PHONE: one day at a time =====================
+   Everything here lives inside this media query, so the desktop layout
+   is untouched. The 760px breakpoint matches the one the script uses to
+   decide which Track renderer to run. */
+@media (max-width:760px){
+  .hdr-right .monthnav{display:none}
+  .topbar{gap:10px}
+  .hdr-right{width:100%;justify-content:space-between}
+  .scorecard{padding:13px 15px;gap:14px}
+  .scorecard .big .val{font-size:24px}
+  .scorecard .weeks{margin-left:0;width:100%}
+
+  .dnav{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);
+    border-radius:10px;padding:8px;margin-bottom:12px}
+  .dnav button.arw{width:42px;height:42px;flex:none;border:1px solid var(--line-strong);border-radius:8px;
+    font-size:20px;line-height:1;background:var(--surface2);color:var(--ink)}
+  .dnav button.arw:disabled{opacity:.3}
+  .dlab{flex:1;text-align:center;min-width:0}
+  .dlab b{display:block;font-family:"Archivo";font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:.02em}
+  .dlab span{display:block;font-family:"IBM Plex Mono";font-size:10.5px;color:var(--muted);margin-top:2px}
+  .dlab .istoday{color:var(--accent)}
+
+  .wstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px}
+  .wstrip button{padding:7px 0 6px;border-radius:8px;border:1px solid var(--line);background:var(--surface);
+    display:flex;flex-direction:column;align-items:center;gap:3px}
+  .wstrip button .wd{font-family:"IBM Plex Mono";font-size:9.5px;color:var(--muted);letter-spacing:.04em}
+  .wstrip button .dt{font-family:"Archivo";font-weight:600;font-size:14px;color:var(--ink)}
+  .wstrip button .dot{width:5px;height:5px;border-radius:50%;background:var(--line-strong)}
+  .wstrip button .dot.some{background:var(--accent)}
+  .wstrip button .dot.all{background:var(--good)}
+  .wstrip button[aria-current=true]{border-color:var(--accent);background:var(--win-bg)}
+  .wstrip button.future{opacity:.45}
+
+  .pcard{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:14px;overflow:hidden}
+  .pcard header{display:flex;align-items:center;gap:10px;padding:12px 15px;border-bottom:1px solid var(--line)}
+  .pcard header h2{font-family:"Archivo";font-weight:800;font-size:14px;margin:0;text-transform:uppercase;
+    letter-spacing:.03em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pcard header .wk{font-family:"IBM Plex Mono";font-size:10px;padding:4px 8px;border-radius:99px;white-space:nowrap}
+  .pcard header .wk.win{background:var(--win-bg);color:var(--accent)}
+  .pcard header .wk.loss{background:var(--loss-bg);color:var(--loss)}
+  .pcard header .wk.open{background:var(--surface2);color:var(--muted)}
+
+  .prow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 15px;
+    border-top:1px solid var(--line);min-height:60px}
+  .prow:first-of-type{border-top:none}
+  .prow:active{background:var(--surface2)}
+  .pnm{flex:1;min-width:0}
+  .pnm b{display:block;font-weight:500;font-size:15px;line-height:1.25}
+  .pnm em{display:block;font-style:normal;font-family:"IBM Plex Mono";font-size:10.5px;color:var(--muted);margin-top:3px}
+  .pnm em .hit{color:var(--good)}
+  .pnm em .miss{color:var(--loss)}
+  .pbox{width:36px;height:36px;flex:none;border:2px solid var(--line-strong);border-radius:9px;
+    background:var(--check-empty);display:flex;align-items:center;justify-content:center}
+  .pbox svg{width:19px;height:19px;stroke:var(--on-accent);stroke-width:3.2;fill:none;opacity:0}
+  .pbox.on{background:var(--check);border-color:var(--check)}
+  .pbox.on svg{opacity:1}
+
+  .pmini{display:flex;flex-wrap:wrap;gap:6px;flex:none}
+  .pmini button{width:30px;height:30px;border:2px solid var(--line-strong);border-radius:8px;
+    background:var(--check-empty);display:flex;align-items:center;justify-content:center}
+  .pmini button svg{width:15px;height:15px;stroke:var(--on-accent);stroke-width:3.2;fill:none;opacity:0}
+  .pmini button.on{background:var(--check);border-color:var(--check)}
+  .pmini button.on svg{opacity:1}
+  .pmonth{padding:11px 15px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px}
+
+  .pfoot{font-family:"IBM Plex Mono";font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--muted);text-align:center;padding:4px 0 2px}
+  .gridwrap{padding:2px 0}
+  .panel{padding:14px 15px 16px}
+  .esec-head,.erow,.eday-btn,.eday-add,.cbar{padding-left:15px;padding-right:15px}
+}
+
 /* ================= EXPENSE MODULE ================= */
 /* module switch — always names the module you are not in, in that module's colour */
 .modbtn{font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:12px;text-transform:uppercase;
@@ -736,8 +808,143 @@ function monthVerdict(key, won){ return won ? "win" : (monthEnded(key) ? "loss" 
 
 const esc = s => String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-/* ================= TRACK VIEW ================= */
-function renderTrack(){
+/* ================= TRACK VIEW =================
+   Two renderers. The desktop one (renderTrackWide) is exactly as it was.
+   On a narrow screen the day view takes over: one tappable row per task
+   for a single day, with arrows and a week strip to move around. */
+const PHONE_MQ = matchMedia("(max-width: 760px)");
+const isPhone = () => PHONE_MQ.matches;
+let dayView = null;
+
+function renderTrack(){ isPhone() ? renderTrackDay() : renderTrackWide(); }
+try{ PHONE_MQ.addEventListener("change", ()=>{ if (mod==="habit" && tab==="track") renderTrack(); }); }catch(e){}
+
+function renderTrackDay(){
+  if (!dayView) dayView = ymd(today());
+  const d = new Date(dayView + "T00:00:00");
+  const mon = mondayOf(d);
+  const key = monthKeyOfWeek(mon);
+  // a day can belong to a different month's week than the one loaded
+  if (key !== view){
+    view = key;
+    loadMonth(view).then(()=>{ if (isPhone() && mod==="habit" && tab==="track") renderTrackDay(); });
+  }
+  const weeks = monthWeeks(key);
+  const wi = Math.max(0, weeks.findIndex(m=>ymd(m)===ymd(mon)));
+  const di = Math.round((d - mon)/86400000);
+  const isToday = dayView === ymd(today());
+  const future = d > today();
+
+  document.getElementById("mlabel").textContent = monthLabel(key);
+  document.getElementById("wkcount").textContent = weeks.length + " weeks";
+
+  const mWin = overallMonthWin(key), v = monthVerdict(key, mWin);
+  document.getElementById("scorecard").innerHTML = `
+    <div class="big"><span class="lbl">${monthLabel(key,true)}</span><span class="val verdict ${v}">${v==="win"?"WON":v==="loss"?"LOST":"IN PLAY"}</span></div>
+    <div class="big"><span class="lbl">Progress</span><span class="val">${Math.round(overallPct(key)*100)}%</span></div>
+    <div class="weeks">${weeks.map((m,i)=>{
+      const won = overallWeekWin(key,m), st = won ? "win" : (weekEnded(m) ? "loss" : "open");
+      return `<span class="chip"><span class="pill ${st}">${st==="win"?"W":st==="loss"?"L":"·"}</span>W${i+1}</span>`;
+    }).join("")}</div>`;
+
+  const areas = areasIn(key);
+  const dayTasks = areas.flatMap(a=>a.tasks.filter(t=>!isMonthly(t)));
+  const doneToday = dayTasks.filter(t=>readWeek(key,mon,t.id)[di]).length;
+
+  // the week strip: tap any day, with a dot showing how that day went
+  const strip = [0,1,2,3,4,5,6].map(i=>{
+    const dt = addDays(mon,i), s = ymd(dt);
+    const n = dayTasks.filter(t=>readWeek(key,mon,t.id)[i]).length;
+    const cls = dayTasks.length && n === dayTasks.length ? "all" : n ? "some" : "";
+    return `<button type="button" data-pday="${s}" aria-current="${s===dayView}"
+      class="${dt>today()?"future":""}" aria-label="${niceDate(s)}">
+      <span class="wd">${DAYS[i]}</span><span class="dt">${dt.getDate()}</span>
+      <span class="dot ${cls}"></span></button>`;
+  }).join("");
+
+  const cards = areas.length ? areas.map(a=>{
+    const won = areaWeekWin(key,mon,a);
+    const st = won ? "win" : (weekEnded(mon) ? "loss" : "open");
+    const weekly = a.tasks.filter(t=>!isMonthly(t));
+    const monthly = a.tasks.filter(isMonthly);
+
+    const rows = weekly.map(t=>{
+      const arr = readWeek(key,mon,t.id);
+      const cnt = arr.filter(Boolean).length;
+      const on = !!arr[di];
+      const left = t.target - cnt;
+      const meta = cnt >= t.target
+        ? `<span class="hit">target met · ${cnt}/${t.target}</span>`
+        : `${cnt} of ${t.target} this week${weekEnded(mon) && left>0 ? ` · <span class="miss">missed by ${left}</span>` : ""}`;
+      return `<button class="prow" type="button" data-ptick="${t.id}" data-pmon="${ymd(mon)}" data-pd="${di}"
+        aria-pressed="${on}">
+        <span class="pnm"><b>${esc(t.name)}</b><em>${meta}</em></span>
+        <span class="pbox ${on?"on":""}">${TICK}</span></button>`;
+    }).join("");
+
+    const mrows = monthly.map(t=>{
+      const arr = readMonthly(key,t), cnt = monthlyCount(key,t), done = cnt>=t.target;
+      return `<div class="pmonth">
+        <span class="pnm"><b>${esc(t.name)}</b><em>${done?`<span class="hit">done · ${cnt}/${t.target} this month</span>`:`${cnt} of ${t.target} this month`}</em></span>
+        <span class="pmini">${Array.from({length:t.target},(_,i)=>
+          `<button type="button" class="${arr[i]?"on":""}" data-pmtick="${t.id}" data-pmi="${i}"
+            aria-pressed="${!!arr[i]}" aria-label="${esc(t.name)} ${i+1} of ${t.target}">${TICK}</button>`).join("")}</span>
+      </div>`;
+    }).join("");
+
+    return `<section class="pcard">
+      <header><h2>${esc(a.name)}</h2>
+        <span class="wk ${st}">W${wi+1} ${st==="win"?"won":st==="loss"?"lost":"in play"}</span></header>
+      ${rows || `<div class="eempty">No daily tasks here.</div>`}${mrows}</section>`;
+  }).join("") : `<div class="pcard"><div class="eempty">${state.areas.length
+      ? "Nothing was being tracked in "+monthLabel(key)+"."
+      : "No key areas yet — add one on a larger screen or below."}</div></div>`;
+
+  document.getElementById("areas").innerHTML = `
+    <div class="dnav">
+      <button class="arw" type="button" data-pshift="-1" aria-label="Previous day">‹</button>
+      <span class="dlab">
+        <b>${niceDate(dayView)}</b>
+        <span>${isToday ? '<span class="istoday">Today</span>' : (relDay(dayView) || "")}
+          ${isToday||relDay(dayView) ? "·" : ""} Week ${wi+1} of ${monthLabel(key,true)}
+          ${dayTasks.length ? `· ${doneToday}/${dayTasks.length} done` : ""}</span>
+      </span>
+      <button class="arw" type="button" data-pshift="1" aria-label="Next day">›</button>
+    </div>
+    <div class="wstrip">${strip}</div>
+    ${future ? `<p class="pfoot">A day that hasn't happened yet</p>` : ""}
+    ${cards}
+    ${isToday ? "" : `<p class="pfoot"><button class="btn" type="button" data-pday="${ymd(today())}">Back to today</button></p>`}`;
+
+  bindTrackDay();
+}
+
+function bindTrackDay(){
+  document.querySelectorAll("[data-pshift]").forEach(b=>b.onclick = ()=>{
+    dayView = ymd(addDays(new Date(dayView+"T00:00:00"), +b.dataset.pshift));
+    renderTrackDay();
+  });
+  document.querySelectorAll("[data-pday]").forEach(b=>b.onclick = ()=>{
+    dayView = b.dataset.pday; renderTrackDay();
+  });
+  document.querySelectorAll("[data-ptick]").forEach(b=>b.onclick = ()=>{
+    const mon = new Date(b.dataset.pmon+"T00:00:00");
+    const arr = weekArr(view, mon, b.dataset.ptick, true);
+    const i = +b.dataset.pd;
+    arr[i] = !arr[i];
+    tickSpin(); persistMonth(view); renderTrackDay();
+  });
+  document.querySelectorAll("[data-pmtick]").forEach(b=>b.onclick = ()=>{
+    const found = tasksOf(state.areas).find(x=>x.t.id===b.dataset.pmtick);
+    if (!found) return;
+    const arr = monthlyArr(view, found.t, true);
+    const i = +b.dataset.pmi;
+    arr[i] = !arr[i];
+    tickSpin(); persistMonth(view); renderTrackDay();
+  });
+}
+
+function renderTrackWide(){
   const weeks = monthWeeks(view);
   document.getElementById("mlabel").textContent = monthLabel(view);
   document.getElementById("wkcount").textContent = weeks.length + " weeks · "
