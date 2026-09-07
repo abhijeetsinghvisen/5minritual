@@ -1,0 +1,2274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>5minritual</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  html { color-scheme: light dark; }
+  body { margin: 0; }
+  img { max-width: 100%; }
+  /* the app drives every view, toggle and form off the hidden attribute */
+  [hidden] { display: none !important; }
+  #authBtn[disabled] { opacity: .5; cursor: default; }
+</style>
+<script>
+  /* the app waits on this; the module script below settles it */
+  window.__fbReady = new Promise(res => { window.__fbResolve = res; });
+</script>
+<script>
+/* stamp the saved theme before anything paints, so the boot screen
+   opens on the right ground instead of flashing the other one */
+try{
+  var t = localStorage.getItem("lifetracker-theme");
+  if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
+}catch(e){}
+</script>
+</head>
+<body>
+<style>
+/* Black-and-white with one red accent, in both directions. The accent is the
+   same #FF4438 on either ground. Red carries achievement: solid = won,
+   hollow = missed by one, grey = missed, hairline = never tracked.
+   Light lives on bare :root; dark is redefined twice so the viewer's OS
+   setting and an explicit theme choice both win in their own direction. */
+:root{
+  color-scheme:light dark;
+  --red:#FF4438; --neon:#00B84A; --neon-bg:#E6F9ED; --on-neon:#04140A;
+  --accent:var(--red); --accent-soft:#FFA6A0; --good:#12A150;
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface2:#F7F7F7; --surface3:#EDEDED;
+  --ink:#0E0E0E; --muted:#767676; --line:#E5E5E5; --line-strong:#C6C6C6;
+  --win:#FF4438; --win-bg:#FFECEA;
+  --loss:#0E0E0E; --loss-bg:#E2E2E2;
+  --near:#FF4438; --near-line:#FF4438;
+  --check:#FF4438; --check-empty:#FFFFFF; --today:#FFF4F2; --today-line:#FF4438;
+  --focus:#FF4438; --on-accent:#FFFFFF;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --red:#FF4438; --neon:#2BFF88; --neon-bg:#082617; --on-neon:#04140A;
+  --accent:var(--red); --accent-soft:#A6382F; --good:#35D07C;
+    --bg:#000000; --surface:#0B0B0B; --surface2:#171717; --surface3:#212121;
+    --ink:#F2F2F2; --muted:#8A8A8A; --line:#242424; --line-strong:#3C3C3C;
+    --win:#FF4438; --win-bg:#2B0E0B;
+    --loss:#F2F2F2; --loss-bg:#242424;
+    --near:#FF4438; --near-line:#FF4438;
+    --check:#FF4438; --check-empty:#000000; --today:#1E0907; --today-line:#FF4438;
+    --focus:#FF4438; --on-accent:#FFFFFF;
+  }
+}
+:root[data-theme="dark"]{
+  --red:#FF4438; --neon:#2BFF88; --neon-bg:#082617; --on-neon:#04140A;
+  --accent:var(--red); --accent-soft:#A6382F; --good:#35D07C;
+  --bg:#000000; --surface:#0B0B0B; --surface2:#171717; --surface3:#212121;
+  --ink:#F2F2F2; --muted:#8A8A8A; --line:#242424; --line-strong:#3C3C3C;
+  --win:#FF4438; --win-bg:#2B0E0B;
+  --loss:#F2F2F2; --loss-bg:#242424;
+  --near:#FF4438; --near-line:#FF4438;
+  --check:#FF4438; --check-empty:#000000; --today:#1E0907; --today-line:#FF4438;
+  --focus:#FF4438; --on-accent:#FFFFFF;
+}
+/* Inside the expense module the accent flips to neon green. Only the accent
+   tokens move — the ground, type and greys stay exactly as they are. */
+:root[data-mod="exp"]{
+  --accent:var(--neon); --accent-soft:var(--neon);
+  --win:var(--neon); --win-bg:var(--neon-bg);
+  --near:var(--neon); --near-line:var(--neon);
+  --check:var(--neon); --today:var(--neon-bg); --today-line:var(--neon);
+  --focus:var(--neon); --on-accent:var(--on-neon);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif;margin:0;padding:24px 20px 80px}
+.wrap{max-width:1560px;margin:0 auto}
+h1{font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:26px;letter-spacing:-.01em;margin:0;text-transform:uppercase}
+h1 .accent{color:var(--accent)}
+
+/* ---- brand mark: quarter-gap ring + tick. Rotates with scroll, and a
+   quarter turn on every checkbox — four ticks is one full revolution. ---- */
+.brand{display:flex;align-items:center;gap:11px}
+.mk{width:30px;height:30px;flex:none;display:block;will-change:transform}
+.mk .ring{stroke:var(--win)}
+.mk .tk{stroke:var(--ink)}
+#mark{display:block}
+
+/* ---- password gate ---- */
+#gate{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:20px;padding:24px}
+#gate.done{display:none}
+#gate .gmark{width:52px;height:52px}
+#gate .gword{font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:clamp(26px,6vw,40px);
+  text-transform:uppercase;letter-spacing:-.02em;line-height:1;margin:0}
+#gate .gword .accent{color:var(--accent)}
+.gform{display:flex;flex-direction:column;gap:10px;width:100%;max-width:270px}
+.gform input{width:100%;text-align:center;font-family:"IBM Plex Mono";font-size:17px;letter-spacing:.28em;
+  padding:11px 12px}
+.gform button{width:100%}
+.gerr{font-family:"IBM Plex Mono";font-size:11.5px;color:var(--red);text-align:center;min-height:16px}
+.ghint{font-family:"IBM Plex Mono";font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);text-align:center}
+
+/* ---- boot screen ---- */
+#boot{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:26px;transition:transform .72s cubic-bezier(.76,0,.24,1)}
+#boot.done{transform:translateY(-101%)}
+#boot .bmark{width:64px;height:64px;animation:spin 1.5s linear infinite}
+#boot .bmark .tk{stroke:var(--muted)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bword{font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:clamp(30px,7vw,58px);
+  text-transform:uppercase;letter-spacing:-.02em;line-height:1;display:flex;overflow:hidden}
+.bword span{display:inline-block;transform:translateY(105%);animation:rise .7s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes rise{to{transform:translateY(0)}}
+.bcount{font-family:"IBM Plex Mono";font-size:12px;letter-spacing:.24em;color:var(--muted);
+  font-variant-numeric:tabular-nums;text-transform:uppercase}
+.bbar{width:min(230px,52vw);height:2px;background:var(--line);overflow:hidden;border-radius:2px}
+.bbar i{display:block;height:100%;width:0;background:var(--win)}
+@media (prefers-reduced-motion:reduce){
+  #boot .bmark{animation:none}
+  .bword span{animation:none;transform:none}
+  #boot{transition:none}
+  .mk{transition:none!important}
+}
+.tagline{color:var(--muted);font-size:13px;margin:2px 0 0;max-width:62ch}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:0}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+input[type=text],input[type=number],select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:6px;padding:6px 9px}
+h3{font-family:"Archivo";font-weight:800;font-size:15px;margin:0;text-transform:uppercase;letter-spacing:.03em}
+.sub{font-size:12.5px;color:var(--muted);margin:3px 0 0}
+
+.topbar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px}
+.tabs{display:flex;gap:2px;background:var(--surface2);border-radius:8px;padding:3px;margin-bottom:20px;width:max-content}
+.tabs button{font-family:"Archivo";font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.05em;padding:7px 18px;border-radius:6px;color:var(--muted)}
+.tabs button[aria-selected=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.hdr-right{display:flex;align-items:center;gap:14px}
+.tbtn{width:32px;height:32px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);
+  display:flex;align-items:center;justify-content:center;flex:none;color:var(--ink)}
+.tbtn:hover{border-color:var(--accent);color:var(--accent)}
+.tbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.monthnav{display:flex;align-items:center;gap:10px}
+.monthnav button{width:32px;height:32px;border:1px solid var(--line-strong);border-radius:6px;font-size:16px;line-height:1;background:var(--surface)}
+.monthnav .mlabel{font-family:"Archivo";font-weight:800;font-size:19px;min-width:210px;text-align:center;text-transform:uppercase;letter-spacing:.02em}
+.wkcount{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);display:block;text-transform:none;letter-spacing:0;font-weight:400}
+
+.scorecard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:22px;margin-bottom:22px}
+.scorecard .big{display:flex;flex-direction:column;gap:2px}
+.scorecard .big .lbl{font-family:"IBM Plex Mono";font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.scorecard .big .val{font-family:"Archivo";font-weight:800;font-size:30px;line-height:1.1}
+.scorecard .weeks{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.verdict.win{color:var(--win)} .verdict.loss{color:var(--loss)} .verdict.open{color:var(--muted)}
+
+.chip{display:inline-flex;flex-direction:column;align-items:center;gap:3px;font-family:"IBM Plex Mono";font-size:11px;color:var(--muted)}
+.chip .pill{width:40px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:12px}
+.pill.win{background:var(--win-bg);color:var(--win)}
+.pill.loss{background:var(--loss-bg);color:var(--loss)}
+.pill.near{background:var(--surface);color:var(--near);box-shadow:inset 0 0 0 1.5px var(--near-line)}
+.pill.open,.pill.none{background:var(--surface2);color:var(--muted)}
+
+.area{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:20px;overflow:hidden}
+.area-head{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.area-head h2{font-family:"Archivo";font-weight:800;font-size:17px;margin:0;text-transform:uppercase;letter-spacing:.02em}
+.mv{font-family:"IBM Plex Mono";font-size:12px;padding:4px 10px;border-radius:99px}
+.mv.win{background:var(--win-bg);color:var(--win)}
+.mv.loss{background:var(--loss-bg);color:var(--loss)}
+.mv.open{background:var(--surface2);color:var(--muted)}
+.area-head .spacer{flex:1}
+.area-head .wchips{display:flex;gap:6px;flex-wrap:wrap}
+.iconbtn{color:var(--muted);font-size:15px;padding:4px 7px;border-radius:6px}
+.iconbtn:hover{background:var(--surface2);color:var(--ink)}
+
+.gridwrap{overflow-x:auto;padding:6px 14px 14px}
+/* fixed layout: named columns are pinned, the 7 day columns share whatever is left,
+   so a 4- or 5-week month fits the page width instead of scrolling */
+table.trk{border-collapse:collapse;width:100%;table-layout:fixed;min-width:720px}
+th,td{padding:0;text-align:center}
+th{font-weight:500}
+.namecol{text-align:left;width:190px;padding:6px 10px 6px 4px;overflow:hidden}
+.wkgap{width:10px}
+.wcell{width:38px;padding:0 3px}
+.trailcol{width:54px}
+.dayhead{font-family:"IBM Plex Mono";font-size:10px;color:var(--muted);padding:8px 0 2px;letter-spacing:.05em}
+.datehead{font-family:"IBM Plex Mono";font-size:10px;color:var(--muted);padding:0 0 6px}
+.wklabel{font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;padding-top:10px}
+.today .dayhead,.today .datehead{color:var(--today-line);font-weight:500}
+td.today-cell{background:var(--today)}
+.spillhead .datehead{opacity:.55}
+.taskname{font-weight:500;display:block;line-height:1.3}
+.tasktarget{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted)}
+tr.taskrow td{border-top:1px solid var(--line)}
+tr.taskrow:hover .rowtools{opacity:1}
+.rowtools{opacity:0;display:inline-flex;gap:2px;margin-left:6px;vertical-align:middle}
+.rowtools .iconbtn{font-size:12px;padding:2px 5px}
+
+.cbx{width:100%;max-width:24px;aspect-ratio:1;min-height:20px;margin:5px auto;border:1.5px solid var(--line-strong);border-radius:6px;background:var(--check-empty);display:flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s}
+.mrow .cbx{width:24px}
+.cbx svg{width:60%;max-width:13px;stroke:#fff;stroke-width:3;fill:none;opacity:0;transition:opacity .1s}
+.cbx.on{background:var(--check);border-color:var(--check)}
+.cbx.on svg{opacity:1}
+.cbx:hover{border-color:var(--check)}
+.wdot{font-family:"IBM Plex Mono";font-size:11px;font-weight:500;width:28px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center}
+.wdot.win{background:var(--win-bg);color:var(--win)}
+.wdot.loss{background:var(--loss-bg);color:var(--loss)}
+.wdot.near{background:var(--surface);color:var(--near);box-shadow:inset 0 0 0 1.5px var(--near-line)}
+.wdot.open{background:var(--surface2);color:var(--muted)}
+.pct{font-family:"IBM Plex Mono";font-size:12px;color:var(--muted);min-width:46px;display:inline-block}
+.pct.full{color:var(--win);font-weight:500}
+.mrow{text-align:left;padding:4px 0 4px 8px}
+.mrow .inner{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.mhint{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);margin-left:8px}
+.mhint.done{color:var(--win)}
+
+.addrow{padding:10px 18px 14px;border-top:1px solid var(--line)}
+.addrow form{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.addrow input[type=text]{width:250px}
+.addrow input[type=number]{width:62px}
+.lbl{font-size:13px;color:var(--muted)}
+.btn{background:var(--surface2);border:1px solid var(--line-strong);border-radius:6px;padding:6px 14px;font-weight:500;font-size:13px}
+.btn.primary{background:var(--win);border-color:var(--win);color:#fff}
+.linkbtn{color:var(--muted);font-size:13px;padding:8px 4px}
+.linkbtn:hover{color:var(--ink)}
+#addAreaZone form{background:var(--surface);border:1px dashed var(--line-strong);border-radius:10px;padding:14px 18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* collapsed until the button is tapped — beats the display:flex above */
+#addAreaZone form[hidden],.addrow form[hidden]{display:none}
+.syncnote{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);text-align:right;margin-top:10px;min-height:16px}
+.empty{color:var(--muted);padding:18px;text-align:center}
+
+/* ---- report ---- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 20px 20px;margin-bottom:20px}
+.panel .gridwrap{padding:2px 0 4px}
+.panel-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;margin-bottom:14px}
+.panel-head .spacer{flex:1}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);margin-bottom:12px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.sw{width:13px;height:13px;border-radius:3px;display:inline-block}
+.sw.win{background:var(--win)}
+.sw.near{background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--near-line)}
+.sw.loss{background:var(--loss-bg)}
+.sw.none{background:transparent;box-shadow:inset 0 0 0 1px var(--line-strong)}
+.sw.good{background:var(--good)}
+.cg-trail.allwon{color:var(--good);font-weight:500}
+
+.nowlist{display:flex;flex-direction:column;gap:2px}
+.nowrow{display:grid;grid-template-columns:minmax(140px,1.4fr) auto minmax(120px,1fr);align-items:center;gap:14px;padding:8px 0;border-top:1px solid var(--line)}
+.nowrow:first-child{border-top:none}
+.nowrow .nm{font-weight:500;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nowrow .nm em{font-style:normal;font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);margin-left:6px}
+.pips{display:flex;gap:3px}
+.pip{width:16px;height:16px;border-radius:4px;background:var(--surface2);box-shadow:inset 0 0 0 1px var(--line)}
+.pip.on{background:var(--win);box-shadow:none}
+.pip.gap{background:transparent;box-shadow:inset 0 0 0 1px var(--line-strong)}
+.status{font-family:"IBM Plex Mono";font-size:11.5px;color:var(--muted);text-align:right}
+.status.win{color:var(--accent)} .status.dead{color:var(--ink)} .status.push{color:var(--ink);font-weight:500}
+
+/* explicit grid columns — every row lines up by construction.
+   Week columns are 1fr with a floor, so the chart breathes out to fill the
+   panel at 3m and packs down as you widen the range. */
+.cgrid{display:grid;gap:4px 3px;align-items:center;width:100%}
+.cg-name{text-align:left;font-size:13px;white-space:nowrap;padding-right:10px}
+.cg-name em{font-style:normal;font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);margin-left:5px}
+.cg-mhdr{font-family:"IBM Plex Mono";font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;text-align:center;padding-bottom:2px;overflow:hidden;white-space:nowrap}
+.cg-group{grid-column:1/-1;font-family:"Archivo";font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:11px 0 1px}
+.cell{width:100%;height:24px;border-radius:3px;display:block;position:relative}
+.compact .cell{height:19px}
+
+/* area result as a skyline: full-height where the whole area was won,
+   a low stub where it was lost — win and loss differ in height, not just hue */
+.res{width:100%;height:26px;display:flex;align-items:flex-end;position:relative}
+.compact .res{height:22px}
+.res i{display:block;width:100%;border-radius:3px}
+/* green is reserved for the area verdict — the week where every task landed */
+.res.win i{height:100%;background:var(--good)}
+.res.near i{height:66%;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--good)}
+.res.loss i{height:34%;background:var(--loss-bg)}
+.res.open i{height:34%;background:var(--surface2)}
+.res.none i{height:34%;background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+.res.off i{height:0}
+.arowlabel{font-family:"Archivo";font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.cell.win{background:var(--win)}
+.cell.near{background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--near-line)}
+.cell.loss{background:var(--loss-bg)}
+.cell.open{background:var(--surface2)}
+.cell.none{background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+.cell.off{background:transparent}
+.cell.thin{height:6px;border-radius:2px}
+.cell.mdiv::before{content:"";position:absolute;left:-2px;top:-2px;bottom:-2px;width:1px;background:var(--line-strong)}
+.cg-trail{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);text-align:right;padding-left:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.cg-trail.good{color:var(--win)} .cg-trail.bad{color:var(--loss)}
+.cg-streak{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);padding-left:12px;white-space:nowrap}
+.flame{color:var(--near)}
+.btn.on{background:var(--win);border-color:var(--win);color:#fff}
+
+.recgrid{overflow-x:auto}
+.rec{border-collapse:collapse;width:100%;min-width:520px}
+.rec th{font-family:"IBM Plex Mono";font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:0 6px 8px;text-align:center}
+.rec th:first-child{text-align:left}
+.rec td{padding:5px 6px;text-align:center;border-top:1px solid var(--line)}
+.rec td:first-child{text-align:left;font-weight:500;font-size:13.5px}
+.reccell{font-family:"IBM Plex Mono";font-size:11px;border-radius:6px;padding:5px 0;display:block;font-variant-numeric:tabular-nums}
+.reccell.win{background:var(--win-bg);color:var(--win)}
+.reccell.loss{background:var(--loss-bg);color:var(--loss)}
+.reccell.open{background:var(--surface2);color:var(--muted)}
+.reccell.none{color:var(--muted);opacity:.5}
+
+.attr{display:flex;flex-direction:column;gap:9px}
+.attrrow{display:grid;grid-template-columns:minmax(130px,1fr) 3fr auto;align-items:center;gap:12px}
+.attrrow .nm{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar{display:flex;height:18px;border-radius:4px;overflow:hidden;background:var(--surface2)}
+.bar i{display:block;height:100%}
+.bar .b-win{background:var(--accent)}
+.bar .b-near{background:var(--accent-soft)}
+.bar .b-loss{background:var(--loss-bg)}
+.attrrow .n{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.dowgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px 22px}
+.dow .nm{font-size:13px;font-weight:500;margin-bottom:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dowbars{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;align-items:end;height:54px}
+.dowbars div{position:relative;height:100%;display:flex;align-items:flex-end}
+.dowbars i{display:block;width:100%;background:var(--accent);border-radius:2px 2px 0 0;min-height:2px}
+.dowbars i.mid{background:var(--accent-soft)}
+.dowbars i.weak{background:var(--line-strong)}
+.dowlabels{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-family:"IBM Plex Mono";font-size:10px;color:var(--muted);text-align:center;margin-top:4px}
+
+.flags{display:flex;flex-direction:column;gap:11px}
+.flag{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;line-height:1.5}
+.flag .tag{font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:99px;white-space:nowrap;margin-top:1px}
+.tag.raise{background:var(--win-bg);color:var(--win)}
+.tag.close{background:var(--surface);color:var(--near);box-shadow:inset 0 0 0 1px var(--near-line)}
+.tag.rethink{background:var(--loss-bg);color:var(--loss)}
+.flag b{font-weight:500}
+.rangesel{display:flex;align-items:center;gap:8px}
+
+@media (max-width:640px){
+  body{padding:14px 10px 60px}
+  .monthnav .mlabel{min-width:150px;font-size:16px}
+  .nowrow{grid-template-columns:1fr auto;row-gap:6px}
+  .nowrow .status{grid-column:1/-1;text-align:left}
+}
+
+/* ================= EXPENSE MODULE ================= */
+/* module switch — always names the module you are not in, in that module's colour */
+.modbtn{font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:12px;text-transform:uppercase;
+  letter-spacing:.06em;padding:9px 16px;border-radius:99px;border:1px solid transparent;white-space:nowrap;
+  transition:filter .15s,transform .1s}
+.modbtn:hover{filter:brightness(1.08)}
+.modbtn:active{transform:scale(.98)}
+.modbtn.to-exp{background:var(--neon);color:var(--on-neon);border-color:var(--neon)}
+.modbtn.to-habit{background:var(--red);color:#fff;border-color:var(--red)}
+
+.esec{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:20px;overflow:hidden}
+.esec-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;padding:15px 20px;border-bottom:1px solid var(--line)}
+.esec-head h3{margin:0}
+.esec-head .spacer{flex:1}
+.etot{font-family:"Archivo";font-weight:800;font-size:22px;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.etot.accent{color:var(--accent)}
+.esub{font-family:"IBM Plex Mono";font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+/* one expense row */
+.erow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;
+  padding:11px 20px;border-top:1px solid var(--line)}
+.erow:first-child{border-top:none}
+.erow .enm{min-width:0}
+.erow .enm b{display:block;font-weight:500;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ecat{display:inline-block;font-family:"IBM Plex Mono";font-size:10.5px;letter-spacing:.04em;color:var(--muted);
+  margin-top:2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eamt{font-family:"IBM Plex Mono";font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;
+  white-space:nowrap;flex:none}
+.etools{display:flex;gap:2px;opacity:0;transition:opacity .12s}
+.erow:hover .etools,.erow:focus-within .etools{opacity:1}
+@media (hover:none){ .etools{opacity:1} }
+
+/* collapsible day rows */
+.eday{border-top:1px solid var(--line)}
+.eday:first-child{border-top:none}
+.eday-btn{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;
+  width:100%;padding:12px 20px;text-align:left}
+.eday-btn:hover{background:var(--surface2)}
+.eday-btn .chev{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);transition:transform .18s;display:inline-block}
+.eday.open .eday-btn .chev{transform:rotate(90deg)}
+.eday-btn .dlab{font-weight:500;font-size:14px}
+.eday-btn .dsub{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);margin-left:8px}
+.eday-body{border-top:1px solid var(--line);background:var(--surface2)}
+.eday-body .erow{border-top:1px solid var(--line)}
+.eday-body .erow:first-child{border-top:none}
+.eday-add{padding:10px 20px;border-top:1px solid var(--line)}
+
+/* category breakdown */
+.cbar{display:grid;grid-template-columns:minmax(90px,1.1fr) minmax(80px,2fr) auto auto;
+  align-items:center;gap:12px;padding:11px 20px;border-top:1px solid var(--line);width:100%;text-align:left}
+.cbar:hover{background:var(--surface2)}
+.cbar .cnm{font-weight:500;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbar .ctrack{height:8px;border-radius:4px;background:var(--surface3);overflow:hidden}
+.cbar .ctrack i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.cbar .cpc{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;
+  min-width:66px;text-align:right}
+.cbar .camt{font-family:"IBM Plex Mono";font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:82px;text-align:right}
+.cdrill{background:var(--surface2);border-top:1px solid var(--line)}
+
+.emonthnav{display:flex;align-items:center;gap:10px}
+.emonthnav button{width:32px;height:32px;border:1px solid var(--line-strong);border-radius:6px;font-size:16px;
+  line-height:1;background:var(--surface);color:var(--ink)}
+.emonthnav .elabel{font-family:"Archivo";font-weight:800;font-size:17px;min-width:170px;text-align:center;
+  text-transform:uppercase;letter-spacing:.02em}
+
+/* add / edit form */
+.eform-wrap{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.45);display:flex;
+  align-items:flex-start;justify-content:center;padding:6vh 16px 16px;overflow-y:auto}
+.eform{background:var(--surface);border:1px solid var(--line-strong);border-radius:12px;padding:20px;
+  width:100%;max-width:430px}
+.eform h3{margin-bottom:14px}
+.efield{display:block;margin-bottom:13px}
+.efield span{display:block;font-family:"IBM Plex Mono";font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.efield input,.efield select{width:100%}
+.eform .row{display:flex;gap:10px}
+.eform .row>*{flex:1}
+.eform-actions{display:flex;gap:8px;margin-top:18px;align-items:center}
+.eform-actions .spacer{flex:1}
+.eerr{color:var(--red);font-size:12.5px;margin-top:-4px;margin-bottom:10px;min-height:16px}
+.newcat{display:none;gap:8px;margin-top:8px}
+.newcat.show{display:flex}
+.catmgr{padding:6px 20px 16px}
+.catrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.catrow .cn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
+.catrow .cc{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted)}
+.eempty{color:var(--muted);padding:26px 20px;text-align:center;font-size:13.5px}
+.sig{text-align:center;font-family:"IBM Plex Mono";font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);opacity:.55;margin-top:34px}
+.wipe{display:block;margin:14px auto 0;font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);opacity:.4;padding:6px 10px;border-radius:6px}
+.wipe:hover{opacity:1;color:var(--red)}
+
+/* ---- accent pass: last so it wins the cascade ---- */
+.pip.on{background:var(--accent)}
+.pip.gap{background:transparent;box-shadow:inset 0 0 0 1px var(--line-strong)}
+.cg-trail.good{color:var(--accent)}
+.cg-trail.bad{color:var(--ink)}
+.flame{color:var(--accent)}
+.tag.raise{background:var(--win-bg);color:var(--accent)}
+.tag.close{background:var(--surface);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tag.rethink{background:var(--ink);color:var(--bg)}
+.bword{color:var(--accent)}
+#boot .bmark .tk{stroke:var(--line-strong)}
+.mk .ring{stroke:var(--accent)}
+.mk .tk{stroke:var(--ink)}
+.pct.full{color:var(--accent)}
+.mhint.done{color:var(--accent)}
+.verdict.win{color:var(--accent)}
+.verdict.loss{color:var(--ink)}
+.tabs button[aria-selected=true]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line-strong)}
+.btn.primary,.btn.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.cbx svg{stroke:var(--on-accent)}
+</style>
+
+<div id="gate">
+  <svg class="mk gmark" viewBox="0 0 32 32" aria-hidden="true">
+    <circle class="ring" cx="16" cy="16" r="12.5" fill="none" stroke-width="3" stroke-linecap="round" stroke-dasharray="59 20" transform="rotate(-90 16 16)"/>
+    <polyline class="tk" points="10.5 16.4 14.4 20.4 22 12.4" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <p class="gword">5min<span class="accent">ritual</span></p>
+  <form class="gform" id="gateForm">
+    <input type="password" id="gatePw" inputmode="numeric" autocomplete="current-password"
+           placeholder="••••••••••" aria-label="Password" required>
+    <button class="btn primary" type="submit">Unlock</button>
+    <div class="gerr" id="gateErr"></div>
+  </form>
+  <p class="ghint">Private</p>
+</div>
+
+<div id="boot">
+  <svg class="mk bmark" viewBox="0 0 32 32" aria-hidden="true">
+    <circle class="ring" cx="16" cy="16" r="12.5" fill="none" stroke-width="3" stroke-linecap="round" stroke-dasharray="59 20" transform="rotate(-90 16 16)"/>
+    <polyline class="tk" points="10.5 16.4 14.4 20.4 22 12.4" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="bword" id="bword"></div>
+  <div class="bcount"><span id="bootPct">00</span> %</div>
+  <div class="bbar"><i id="bootBar"></i></div>
+</div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <div class="brand">
+        <svg class="mk" id="mark" viewBox="0 0 32 32" aria-hidden="true">
+          <circle class="ring" cx="16" cy="16" r="12.5" fill="none" stroke-width="3" stroke-linecap="round" stroke-dasharray="59 20" transform="rotate(-90 16 16)"/>
+          <polyline class="tk" points="10.5 16.4 14.4 20.4 22 12.4" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1>5min<span class="accent">ritual</span></h1>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <button class="modbtn to-exp" id="modBtn" type="button"></button>
+      <button class="btn" id="authBtn" type="button">Sign in to sync</button>
+      <button class="tbtn" id="themeBtn" type="button" aria-label="Switch theme"></button>
+      <div class="monthnav">
+        <button id="prevM" aria-label="Previous month">‹</button>
+        <div class="mlabel"><span id="mlabel"></span><span class="wkcount" id="wkcount"></span></div>
+        <button id="nextM" aria-label="Next month">›</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" id="tabsHabit">
+    <button role="tab" id="tabTrack" aria-selected="true">Track</button>
+    <button role="tab" id="tabReport" aria-selected="false">Report</button>
+  </div>
+
+  <!-- the expense module's own toggle: separate element, separate state -->
+  <div class="tabs" role="tablist" id="tabsExp" hidden>
+    <button role="tab" id="tabRecord" aria-selected="true">Record</button>
+    <button role="tab" id="tabSpend" aria-selected="false">Track</button>
+  </div>
+
+  <div id="viewTrack">
+    <div class="scorecard" id="scorecard"></div>
+    <div id="areas"></div>
+    <div id="addAreaZone">
+      <button class="btn" id="showAddArea">+ New key area</button>
+      <form id="addAreaForm" hidden>
+        <input type="text" id="newAreaName" placeholder="Key area name (e.g. Health)" maxlength="40" required>
+        <button class="btn primary" type="submit">Add key area</button>
+        <button class="btn" type="button" id="cancelAddArea">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="viewReport" hidden></div>
+
+  <!-- expense module: its own views, its own store -->
+  <div id="viewExpRecord" hidden></div>
+  <div id="viewExpTrack" hidden></div>
+
+  <div class="syncnote" id="syncnote"></div>
+  <div class="sig">built by abhijeetsinghvisen</div>
+  <button class="wipe" id="wipeBtn" type="button">Reset all data</button>
+</div>
+
+<div class="eform-wrap" id="expFormWrap" hidden>
+  <form class="eform" id="expForm">
+    <h3 id="expFormTitle">Add expense</h3>
+    <label class="efield"><span>What was it</span>
+      <input type="text" id="fName" maxlength="80" placeholder="Auto rickshaw" required></label>
+    <div class="row">
+      <label class="efield"><span>Amount (₹)</span>
+        <input type="text" id="fAmt" inputmode="decimal" autocomplete="off" placeholder="250" required></label>
+      <label class="efield"><span>Date</span>
+        <input type="date" id="fDate" required></label>
+    </div>
+    <label class="efield"><span>Category</span>
+      <select id="fCat"></select></label>
+    <div class="newcat" id="newCatRow">
+      <input type="text" id="fNewCat" maxlength="34" placeholder="New category name">
+    </div>
+    <div class="eerr" id="fErr"></div>
+    <div class="eform-actions">
+      <button class="btn primary" type="submit" id="fSave">Save</button>
+      <button class="btn" type="button" id="fCancel">Cancel</button>
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="fDelete" hidden>Delete</button>
+    </div>
+  </form>
+</div>
+
+<div class="eform-wrap" id="incFormWrap" hidden>
+  <form class="eform" id="incForm">
+    <h3 id="incFormTitle">Add income</h3>
+    <label class="efield"><span>Source</span>
+      <input type="text" id="iName" maxlength="60" placeholder="Salary" required></label>
+    <div class="row">
+      <label class="efield"><span>Amount (₹)</span>
+        <input type="text" id="iAmt" inputmode="decimal" autocomplete="off" placeholder="85000" required></label>
+      <label class="efield"><span>Month</span>
+        <input type="month" id="iMonth" required></label>
+    </div>
+    <div class="eerr" id="iErr"></div>
+    <div class="eform-actions">
+      <button class="btn primary" type="submit">Save</button>
+      <button class="btn" type="button" id="iCancel">Cancel</button>
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="iDelete" hidden>Delete</button>
+    </div>
+  </form>
+</div>
+
+<script>
+"use strict";
+const TICK = '<svg viewBox="0 0 16 16"><polyline points="3 8.5 6.5 12 13 4"/></svg>';
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MSHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const DAYS = ["M","T","W","T","F","S","S"];
+const DAYFULL = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const LS_KEY = "win-the-week-v2";
+
+/* state.months[monthKey] = { weeks: { "<mondayYmd>": { taskId: [7 bools] } }, monthly: { taskId: [bools] } } */
+let state = { areas: [], months: {} };
+let view = null, tab = "track";
+let db = null, saveTimers = {}, loadedAll = false, range = 3;
+
+/* ---------- dates ---------- */
+function pad(n){ return String(n).padStart(2,"0"); }
+function ymd(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function today(){ const d = new Date(); d.setHours(0,0,0,0); return d; }
+function addDays(d,n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function mondayOf(d){ const x = new Date(d); x.setHours(0,0,0,0); return addDays(x, -((x.getDay()+6)%7)); }
+// the month a Mon–Sun week belongs to = the month holding its Thursday
+function monthKeyOfWeek(mon){ const th = addDays(mon,3); return th.getFullYear()+"-"+pad(th.getMonth()+1); }
+function monthKeyOfDate(d){ return monthKeyOfWeek(mondayOf(d)); }
+// every Mon–Sun week whose Thursday lands in this month: 4 or 5 of them
+function monthWeeks(key){
+  const [y,m] = key.split("-").map(Number);
+  const out = [];
+  let d = new Date(y, m-1, 1);
+  while (d.getDay() !== 4) d = addDays(d,1);
+  while (d.getMonth() === m-1){ out.push(addDays(d,-3)); d = addDays(d,7); }
+  return out;
+}
+function shiftMonth(key, delta){
+  let [y,m] = key.split("-").map(Number);
+  m += delta; if (m<1){m=12;y--} if (m>12){m=1;y++}
+  return y+"-"+pad(m);
+}
+function monthLabel(key,short){
+  const [y,m] = key.split("-").map(Number);
+  return (short?MSHORT:MONTHS)[m-1] + (short?"":" "+y);
+}
+function weekEnded(mon){ return addDays(mon,6) < today(); }
+function weekIsCurrent(mon){ const t = today(); return mon <= t && t <= addDays(mon,6); }
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+/* ---------- data access ---------- */
+function monthDoc(key,create){
+  let d = state.months[key];
+  if (!d){ if (!create) return null; d = state.months[key] = {weeks:{}, monthly:{}}; }
+  if (!d.weeks) d.weeks = {}; if (!d.monthly) d.monthly = {};
+  return d;
+}
+function weekArr(key, mon, taskId, create){
+  const doc = monthDoc(key, create);
+  if (!doc) return null;
+  const k = ymd(mon);
+  let w = doc.weeks[k];
+  if (!w){ if (!create) return null; w = doc.weeks[k] = {}; }
+  let a = w[taskId];
+  if (!a){ if (!create) return null; a = w[taskId] = Array(7).fill(false); }
+  return a;
+}
+function readWeek(key, mon, taskId){ return weekArr(key,mon,taskId,false) || Array(7).fill(false); }
+function monthlyArr(key, t, create){
+  const doc = monthDoc(key, create);
+  if (!doc) return null;
+  let a = doc.monthly[t.id];
+  if (!a){ if (!create) return null; a = doc.monthly[t.id] = []; }
+  while (a.length < t.target) a.push(false);
+  return a;
+}
+function readMonthly(key,t){ return monthlyArr(key,t,false) || Array(t.target).fill(false); }
+const isMonthly = t => t.freq === "m";
+
+/* ---------- lifespan ----------
+   from = first month this exists, to = last month (set when retired).
+   History is never rewritten: a task added in September is absent from August,
+   and a task deleted today stays in the months it was actually tracked. */
+function activeIn(o,key){ return (!o.from || key >= o.from) && (!o.to || key <= o.to); }
+function areasIn(key){
+  return state.areas.filter(a=>activeIn(a,key))
+    .map(a=>({...a, tasks:a.tasks.filter(t=>activeIn(t,key))}));
+}
+// every area/task that existed at any point in the window, for report rows
+function areasOver(months){
+  return state.areas.filter(a=>months.some(k=>activeIn(a,k)))
+    .map(a=>({...a, tasks:a.tasks.filter(t=>months.some(k=>activeIn(a,k)&&activeIn(t,k)))}))
+    .filter(a=>a.tasks.length);
+}
+function liveIn(a,t,key){ return activeIn(a,key) && activeIn(t,key); }
+function tasksOf(areas){ return areas.flatMap(a=>a.tasks.map(t=>({t,a}))); }
+
+/* ---------- win logic ---------- */
+function weekCount(key,mon,t){ return readWeek(key,mon,t.id).filter(Boolean).length; }
+function weekWin(key,mon,t){ return weekCount(key,mon,t) >= t.target; }
+function monthlyCount(key,t){ return readMonthly(key,t).slice(0,t.target).filter(Boolean).length; }
+function monthlyWin(key,t){ return monthlyCount(key,t) >= t.target; }
+
+// weekly cell state: win | near (missed by 1) | loss | open (week not finished) | none (never tracked)
+function weekState(key,mon,t){
+  if (weekWin(key,mon,t)) return "win";
+  if (!weekEnded(mon)) return "open";
+  if (!monthDoc(key,false)) return "none";
+  return weekCount(key,mon,t) === t.target-1 ? "near" : "loss";
+}
+// only tasks that existed that month count toward it
+function activeTasks(key,a){ return a.tasks.filter(t=>liveIn(a,t,key)); }
+// monthly tasks can't lose a single week — they only gate the month
+function areaWeekWin(key,mon,a){
+  if (!activeIn(a,key)) return false;
+  return activeTasks(key,a).filter(t=>!isMonthly(t)).every(t=>weekWin(key,mon,t));
+}
+function areaMonthWin(key,a){
+  const act = activeTasks(key,a);
+  if (!activeIn(a,key) || !act.length) return false;
+  return monthWeeks(key).every(mon=>areaWeekWin(key,mon,a))
+      && act.filter(isMonthly).every(t=>monthlyWin(key,t));
+}
+function taskMonthPct(key,t){
+  if (isMonthly(t)) return Math.min(1, monthlyCount(key,t)/t.target);
+  const ws = monthWeeks(key);
+  return ws.filter(mon=>weekWin(key,mon,t)).length / ws.length;
+}
+function areaMonthPct(key,a){
+  const act = activeTasks(key,a);
+  if (!act.length) return 0;
+  return act.reduce((s,t)=>s+taskMonthPct(key,t),0)/act.length;
+}
+function overallWeekWin(key,mon){
+  const live = areasIn(key).filter(a=>a.tasks.length);
+  return live.length>0 && live.every(a=>areaWeekWin(key,mon,a));
+}
+function overallMonthWin(key){
+  const live = areasIn(key).filter(a=>a.tasks.length);
+  return live.length>0 && live.every(a=>areaMonthWin(key,a));
+}
+function overallPct(key){
+  const ts = tasksOf(areasIn(key));
+  if (!ts.length) return 0;
+  return ts.reduce((s,x)=>s+taskMonthPct(key,x.t),0)/ts.length;
+}
+function monthEnded(key){ const ws = monthWeeks(key); return weekEnded(ws[ws.length-1]); }
+function monthVerdict(key, won){ return won ? "win" : (monthEnded(key) ? "loss" : "open"); }
+
+const esc = s => String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ================= TRACK VIEW ================= */
+function renderTrack(){
+  const weeks = monthWeeks(view);
+  document.getElementById("mlabel").textContent = monthLabel(view);
+  document.getElementById("wkcount").textContent = weeks.length + " weeks · "
+    + MSHORT[weeks[0].getMonth()] + " " + weeks[0].getDate() + " – "
+    + MSHORT[addDays(weeks[weeks.length-1],6).getMonth()] + " " + addDays(weeks[weeks.length-1],6).getDate();
+
+  const mWin = overallMonthWin(view), v = monthVerdict(view, mWin);
+  document.getElementById("scorecard").innerHTML = `
+    <div class="big"><span class="lbl">Month</span><span class="val verdict ${v}">${v==="win"?"WON":v==="loss"?"LOST":"IN PLAY"}</span></div>
+    <div class="big"><span class="lbl">Progress</span><span class="val">${Math.round(overallPct(view)*100)}%</span></div>
+    <div class="weeks">${weeks.map((mon,i)=>{
+      const won = overallWeekWin(view,mon);
+      const st = won ? "win" : (weekEnded(mon) ? "loss" : "open");
+      return `<span class="chip"><span class="pill ${st}">${st==="win"?"W":st==="loss"?"L":"·"}</span>W${i+1}</span>`;
+    }).join("")}</div>`;
+
+  const zone = document.getElementById("areas");
+  const shown = areasIn(view);
+  zone.innerHTML = shown.length
+    ? shown.map(a=>renderArea(a,weeks)).join("")
+    : `<div class="area"><div class="empty">${state.areas.length
+        ? "Nothing was being tracked in "+monthLabel(view)+". Tasks appear from the month you add them onward."
+        : "No key areas yet. Create one below, then add tasks with a weekly or monthly target."}</div></div>`;
+  bindTrack();
+}
+
+function renderArea(a, weeks){
+  const won = areaMonthWin(view,a), v = monthVerdict(view,won);
+  const nCols = 1 + weeks.length*9 + 1;
+  const dayHead = weeks.map((mon,wi)=>
+    `<th class="wkgap"></th>` +
+    [0,1,2,3,4,5,6].map(d=>{
+      const dt = addDays(mon,d), isToday = ymd(dt)===ymd(today());
+      const spill = dt.getMonth() !== (+view.split("-")[1]-1);
+      return `<th class="${isToday?"today":""} ${spill?"spillhead":""}"><div class="dayhead">${DAYS[d]}</div><div class="datehead">${dt.getDate()}</div></th>`;
+    }).join("") + `<th class="wcell wklabel">W${wi+1}</th>`
+  ).join("");
+
+  const nameCell = t => `<td class="namecol"><span class="taskname">${esc(t.name)}<span class="rowtools">
+      <button class="iconbtn" data-edit="${t.id}" data-area="${a.id}" title="Edit task">✎</button>
+      <button class="iconbtn" data-del="${t.id}" data-area="${a.id}" title="Delete task">✕</button></span></span>
+      <span class="tasktarget">${t.target}× / ${isMonthly(t)?"month":"week"}</span></td>`;
+
+  const rows = a.tasks.map(t=>{
+    if (isMonthly(t)){
+      const arr = readMonthly(view,t), cnt = monthlyCount(view,t), done = cnt>=t.target;
+      const boxes = Array.from({length:t.target},(_,i)=>
+        `<button class="cbx ${arr[i]?"on":""}" data-task="${t.id}" data-m="${i}" aria-label="${esc(t.name)} — completion ${i+1} of ${t.target}" aria-pressed="${!!arr[i]}">${TICK}</button>`
+      ).join("");
+      return `<tr class="taskrow">${nameCell(t)}
+        <td class="mrow" colspan="${weeks.length*9}"><div class="inner">${boxes}
+          <span class="mhint ${done?"done":""}">${done?"month won":cnt+" of "+t.target+" done"}</span></div></td>
+        <td><span class="pct ${done?"full":""}">${cnt}/${t.target}</span></td></tr>`;
+    }
+    const cells = weeks.map(mon=>{
+      const arr = readWeek(view,mon,t.id), cnt = arr.filter(Boolean).length;
+      const st = weekState(view,mon,t), shown = st==="none" ? "open" : st;
+      return `<td class="wkgap"></td>` +
+        [0,1,2,3,4,5,6].map(d=>{
+          const dt = addDays(mon,d), isToday = ymd(dt)===ymd(today());
+          return `<td class="${isToday?"today-cell":""}"><button class="cbx ${arr[d]?"on":""}" data-task="${t.id}" data-mon="${ymd(mon)}" data-d="${d}" aria-label="${esc(t.name)} — ${DAYFULL[d]} ${dt.getDate()} ${MSHORT[dt.getMonth()]}" aria-pressed="${!!arr[d]}">${TICK}</button></td>`;
+        }).join("") +
+        `<td class="wcell"><span class="wdot ${shown}" title="${cnt} of ${t.target}">${st==="win"?"W":st==="loss"?"L":st==="near"?"−1":cnt+"/"+t.target}</span></td>`;
+    }).join("");
+    const wins = weeks.filter(mon=>weekWin(view,mon,t)).length;
+    return `<tr class="taskrow">${nameCell(t)}${cells}
+      <td><span class="pct ${wins===weeks.length?"full":""}">${wins}/${weeks.length}</span></td></tr>`;
+  }).join("");
+
+  return `<section class="area">
+    <div class="area-head">
+      <h2>${esc(a.name)}</h2>
+      <span class="mv ${v}">${v==="win"?"MONTH WON":v==="loss"?"MONTH LOST":Math.round(areaMonthPct(view,a)*100)+"%"}</span>
+      <span class="spacer"></span>
+      <div class="wchips">${weeks.map((mon,i)=>{
+        const w = areaWeekWin(view,mon,a), st = w?"win":(weekEnded(mon)?"loss":"open");
+        return `<span class="chip"><span class="pill ${st}">${st==="win"?"W":st==="loss"?"L":"·"}</span>W${i+1}</span>`;
+      }).join("")}</div>
+      <button class="iconbtn" data-delarea="${a.id}" title="Delete key area">✕</button>
+    </div>
+    <div class="gridwrap"><table class="trk">
+      <thead><tr><th class="namecol"></th>${dayHead}<th class="trailcol"></th></tr></thead>
+      <tbody>${rows || `<tr><td class="empty" colspan="${nCols}">No tasks yet.</td></tr>`}</tbody>
+    </table></div>
+    <div class="addrow">
+      <button class="linkbtn" data-showadd="${a.id}">+ Add task</button>
+      <form data-addform="${a.id}" hidden>
+        <input type="text" placeholder="Task name" maxlength="60" required data-f="name">
+        <span class="lbl">target</span>
+        <input type="number" min="1" max="28" value="3" required data-f="target">
+        <select data-f="freq" aria-label="Frequency">
+          <option value="w">days / week</option>
+          <option value="m">times / month</option>
+        </select>
+        <button class="btn primary" type="submit">Add</button>
+      </form>
+    </div>
+  </section>`;
+}
+
+function bindTrack(){
+  document.querySelectorAll("[data-mon]").forEach(b=>b.onclick = ()=>{
+    const mon = new Date(b.dataset.mon+"T00:00:00");
+    const arr = weekArr(view, mon, b.dataset.task, true);
+    arr[+b.dataset.d] = !arr[+b.dataset.d];
+    tickSpin();
+    persistMonth(view); renderTrack();
+  });
+  document.querySelectorAll("[data-m]").forEach(b=>b.onclick = ()=>{
+    const found = tasksOf(state.areas).find(x=>x.t.id===b.dataset.task);
+    if (!found) return;
+    const arr = monthlyArr(view, found.t, true);
+    const i = +b.dataset.m;
+    arr[i] = !arr[i];
+    tickSpin();
+    persistMonth(view); renderTrack();
+  });
+  document.querySelectorAll("[data-showadd]").forEach(b=>b.onclick = ()=>{
+    const f = document.querySelector(`[data-addform="${b.dataset.showadd}"]`);
+    f.hidden = false; b.hidden = true; f.querySelector("input").focus();
+  });
+  document.querySelectorAll("[data-addform]").forEach(f=>f.onsubmit = e=>{
+    e.preventDefault();
+    const a = state.areas.find(x=>x.id===f.dataset.addform);
+    const name = f.querySelector('[data-f="name"]').value.trim();
+    const freq = f.querySelector('[data-f="freq"]').value === "m" ? "m" : "w";
+    const target = Math.min(freq==="m"?28:7, Math.max(1, +f.querySelector('[data-f="target"]').value || 1));
+    if (!name || !a) return;
+    a.tasks.push({id:uid(), name, target, freq, from:view});
+    persistConfig(); renderTrack();
+  });
+  document.querySelectorAll("[data-del]").forEach(b=>b.onclick = ()=>{
+    const a = state.areas.find(x=>x.id===b.dataset.area);
+    const t = a && a.tasks.find(x=>x.id===b.dataset.del);
+    if (!t) return;
+    const prev = shiftMonth(view,-1);
+    const brandNew = t.from && t.from > prev;
+    const msg = brandNew
+      ? `Delete task "${t.name}"? It has no earlier history, so it goes completely.`
+      : `Stop tracking "${t.name}" from ${monthLabel(view)} on? Earlier months keep it.`;
+    if (!confirm(msg)) return;
+    if (brandNew) a.tasks = a.tasks.filter(x=>x.id!==t.id);
+    else t.to = prev;
+    persistConfig(); renderTrack();
+  });
+  document.querySelectorAll("[data-edit]").forEach(b=>b.onclick = ()=>{
+    const a = state.areas.find(x=>x.id===b.dataset.area);
+    const t = a && a.tasks.find(x=>x.id===b.dataset.edit);
+    if (!t) return;
+    const name = prompt("Task name:", t.name);
+    if (name === null) return;
+    const fq = prompt('Frequency — "w" for per week, "m" for per month:', isMonthly(t)?"m":"w");
+    if (fq === null) return;
+    const freq = fq.trim().toLowerCase()==="m" ? "m" : "w";
+    const target = prompt(freq==="m" ? "Target (times per month, 1–28):" : "Target (days per week, 1–7):", t.target);
+    if (target === null) return;
+    if (name.trim()) t.name = name.trim();
+    t.freq = freq;
+    t.target = Math.min(freq==="m"?28:7, Math.max(1, parseInt(target,10) || t.target));
+    persistConfig(); renderTrack();
+  });
+  document.querySelectorAll("[data-delarea]").forEach(b=>b.onclick = ()=>{
+    const a = state.areas.find(x=>x.id===b.dataset.delarea);
+    if (!a) return;
+    const prev = shiftMonth(view,-1);
+    const brandNew = a.from && a.from > prev;
+    const msg = brandNew
+      ? `Delete key area "${a.name}"? It has no earlier history, so it goes completely.`
+      : `Stop tracking "${a.name}" and its tasks from ${monthLabel(view)} on? Earlier months keep them.`;
+    if (!confirm(msg)) return;
+    if (brandNew) state.areas = state.areas.filter(x=>x.id!==a.id);
+    else a.to = prev;
+    persistConfig(); renderTrack();
+  });
+}
+
+/* ================= REPORT VIEW ================= */
+function hasData(k){
+  const d = state.months[k];
+  if (!d) return false;
+  return Object.values(d.weeks||{}).some(w=>Object.values(w).some(a=>a.some(Boolean)))
+      || Object.values(d.monthly||{}).some(a=>a.some(Boolean));
+}
+// a fixed window ending at the current month, so each range shows a different span.
+// "All" runs from the earliest month with data to now.
+function dataMonths(){
+  const cur = monthKeyOfDate(today());
+  const out = [];
+  if (range === 0){
+    const withData = Object.keys(state.months).filter(hasData).sort();
+    let k = withData.length ? withData[0] : cur;
+    while (k <= cur && out.length < 60){ out.push(k); k = shiftMonth(k,1); }
+    if (!out.length) out.push(cur);
+    return out;
+  }
+  let k = cur;
+  for (let i=0; i<range; i++){ out.unshift(k); k = shiftMonth(k,-1); }
+  return out;
+}
+// flat chronological list of {key, mon, idx} across the shown months
+function weekTimeline(){
+  const out = [];
+  dataMonths().forEach(key=>monthWeeks(key).forEach((mon,i)=>out.push({key,mon,idx:i})));
+  return out;
+}
+function endedWeeks(){ return weekTimeline().filter(w=>weekEnded(w.mon)); }
+
+// counts only weeks the task was actually being tracked
+function taskRecord(a,t){
+  const ew = endedWeeks().filter(w=>monthDoc(w.key,false) && liveIn(a,t,w.key));
+  let win=0, near=0, loss=0, best=0, run=0;
+  ew.forEach(w=>{
+    const c = weekCount(w.key,w.mon,t);
+    if (c >= t.target){ win++; run++; best = Math.max(best,run); }
+    else { if (c === t.target-1) near++; else loss++; run = 0; }
+  });
+  return {win, near, loss, total:ew.length, streak:run, best};
+}
+
+function renderReport(){
+  const el = document.getElementById("viewReport");
+  const months = dataMonths();
+  if (!tasksOf(areasOver(months)).length){
+    el.innerHTML = `<div class="panel"><div class="empty">Add a task on the Track tab and the report fills in from your ticks.</div></div>`;
+    return;
+  }
+  el.innerHTML = panelNow() + panelGrid(months) + panelRecord(months)
+    + panelAttribution(months) + panelDow(months) + panelFlags(months);
+  document.querySelectorAll("[data-range]").forEach(b=>b.onclick = ()=>{ range = +b.dataset.range; renderReport(); });
+}
+
+/* 1 — this week, live */
+function panelNow(){
+  const mon = mondayOf(today()), key = monthKeyOfWeek(mon);
+  const t0 = today();
+  const left = Math.round((addDays(mon,6) - t0)/86400000) + 1;
+
+  const rows = [];
+  areasIn(key).forEach(a=>{
+    a.tasks.forEach(t=>{
+      if (isMonthly(t)){
+        const c = monthlyCount(key,t), done = c>=t.target;
+        rows.push({sort: done?3:1, html:`<div class="nowrow">
+          <div class="nm">${esc(t.name)}<em>${a.name} · monthly</em></div>
+          <div class="pips">${Array.from({length:t.target},(_,i)=>`<span class="pip ${i<c?"on":""}"></span>`).join("")}</div>
+          <div class="status ${done?"win":""}">${done?"month done":c+" of "+t.target+" this month"}</div></div>`});
+        return;
+      }
+      const c = weekCount(key,mon,t), need = t.target - c;
+      const dead = need > left, won = need <= 0;
+      const st = won ? "win" : dead ? "dead" : (need >= left ? "push" : "");
+      const txt = won ? "won" : dead ? "can't be won" : `${need} more · ${left} day${left===1?"":"s"} left`;
+      rows.push({sort: won?3:dead?2:0, html:`<div class="nowrow">
+        <div class="nm">${esc(t.name)}<em>${a.name}</em></div>
+        <div class="pips">${Array.from({length:t.target},(_,i)=>`<span class="pip ${i<c?"on":(i<c+left?"":"gap")}"></span>`).join("")}</div>
+        <div class="status ${st}">${esc(txt)}</div></div>`});
+    });
+  });
+  rows.sort((x,y)=>x.sort-y.sort);
+  const wk = monthWeeks(key).findIndex(m=>ymd(m)===ymd(mon)) + 1;
+  return `<div class="panel">
+    <div class="panel-head"><div><h3>This week</h3>
+      <p class="sub">Week ${wk} of ${monthLabel(key)} · ${MSHORT[mon.getMonth()]} ${mon.getDate()} – ${MSHORT[addDays(mon,6).getMonth()]} ${addDays(mon,6).getDate()} · ${left} day${left===1?"":"s"} remaining</p></div></div>
+    <div class="nowlist">${rows.length?rows.map(r=>r.html).join(""):`<div class="empty">Nothing is being tracked this month.</div>`}</div></div>`;
+}
+
+/* 2 — consistency grid */
+function panelGrid(months){
+  const tl = weekTimeline();
+  const N = tl.length;
+  // 1fr per week so the chart always fills the panel; the floor forces a
+  // scroll only once the weeks genuinely cannot fit
+  const floor = N > 40 ? 11 : N > 26 ? 14 : 18;
+  const cols = `max-content repeat(${N}, minmax(${floor}px, 1fr)) max-content max-content`;
+
+  // header: one label per month, spanning that month's weeks
+  let out = `<div class="cg-mhdr"></div>`;
+  months.forEach(key=>{
+    const n = monthWeeks(key).length;
+    out += `<div class="cg-mhdr" style="grid-column:span ${n}">${monthLabel(key,true)}${n===5?" · 5w":""}</div>`;
+  });
+  out += `<div></div><div></div>`;
+
+  const cellDiv = (cls, span, title) =>
+    `<span class="cell ${cls}"${span?` style="grid-column:span ${span}"`:""}${title?` title="${title}"`:""}></span>`;
+  const resDiv = (cls, title) =>
+    `<span class="res ${cls}"${title?` title="${title}"`:""}><i></i></span>`;
+
+  areasOver(months).forEach(a=>{
+    out += `<div class="cg-group">${esc(a.name)}</div>`;
+
+    a.tasks.forEach(t=>{
+      if (isMonthly(t)){
+        out += `<div class="cg-name">${esc(t.name)}<em>${t.target}×/mo</em></div>`;
+        months.forEach(key=>{
+          const n = monthWeeks(key).length;
+          const cls = !liveIn(a,t,key) ? "off"
+            : monthlyWin(key,t) ? "win"
+            : (!monthDoc(key,false) ? "none" : monthEnded(key) ? "loss" : "open");
+          out += cellDiv(cls + " mdiv", n, liveIn(a,t,key)
+            ? `${monthLabel(key,true)}: ${monthlyCount(key,t)} of ${t.target}`
+            : `${monthLabel(key,true)}: not tracked yet`);
+        });
+        const live = months.filter(k=>liveIn(a,t,k) && monthDoc(k,false));
+        const w = live.filter(k=>monthlyWin(k,t)).length;
+        out += `<div class="cg-trail ${w&&w===live.length?"good":""}">${w}/${live.length} mo</div><div class="cg-streak"></div>`;
+        return;
+      }
+      out += `<div class="cg-name">${esc(t.name)}<em>${t.target}×/wk</em></div>`;
+      tl.forEach(w=>{
+        const div = w.idx===0 ? " mdiv" : "";
+        if (!liveIn(a,t,w.key)){ out += cellDiv("off"+div, 0, "not tracked yet"); return; }
+        out += cellDiv(weekState(w.key,w.mon,t)+div, 0,
+          `${MSHORT[w.mon.getMonth()]} ${w.mon.getDate()} — ${weekCount(w.key,w.mon,t)} of ${t.target}`);
+      });
+      const r = taskRecord(a,t);
+      const cls = r.total ? (r.win===r.total ? "good" : r.win===0 ? "bad" : "") : "";
+      out += `<div class="cg-trail ${cls}">${r.win}/${r.total}</div>
+        <div class="cg-streak">${r.streak>1?`<span class="flame">${r.streak}w streak</span>`:r.best>1?`best ${r.best}w`:""}</div>`;
+    });
+
+    out += `<div class="cg-name arowlabel">${esc(a.name)} result</div>`;
+    tl.forEach(w=>{
+      const cls = !activeIn(a,w.key) ? "off"
+        : areaWeekWin(w.key,w.mon,a) ? "win"
+        : (!monthDoc(w.key,false) ? "none" : weekEnded(w.mon) ? "loss" : "open");
+      const label = cls==="win" ? "won" : cls==="loss" ? "lost" : cls==="open" ? "in play" : "not tracked";
+      out += resDiv(cls, `${MSHORT[w.mon.getMonth()]} ${w.mon.getDate()} — ${label}`);
+    });
+    const ended = tl.filter(w=>weekEnded(w.mon) && monthDoc(w.key,false) && activeIn(a,w.key));
+    const aw = ended.filter(w=>areaWeekWin(w.key,w.mon,a)).length;
+    out += `<div class="cg-trail ${aw&&aw===ended.length?"allwon":""}">${aw}/${ended.length}</div><div class="cg-streak"></div>`;
+  });
+
+  return `<div class="panel">
+    <div class="panel-head"><div><h3>Consistency</h3>
+      <p class="sub">One cell per real week. The area row goes green only when every task in it hit target — that's the week you actually won.</p></div>
+      <span class="spacer"></span>
+      <div class="rangesel"><span class="lbl">Show</span>
+        ${[3,6,12,0].map(r=>`<button class="btn ${range===r?"on":""}" data-range="${r}">${r===0?"All":r+"m"}</button>`).join("")}</div>
+    </div>
+    <div class="legend">
+      <span><i class="sw win"></i>Won</span><span><i class="sw near"></i>Missed by 1</span>
+      <span><i class="sw loss"></i>Missed</span><span><i class="sw none"></i>Not tracked / in play</span>
+      <span><i class="sw good"></i>Area won</span>
+      <span style="margin-left:auto">Area rows stand tall and green on a won week, low on a lost one</span>
+    </div>
+    <div class="gridwrap"><div class="cgrid ${N>26?"compact":""}" style="grid-template-columns:${cols}">${out}</div></div></div>`;
+}
+
+/* 3 — key area month record */
+function panelRecord(months){
+  const rows = areasOver(months).map(a=>{
+    const cells = months.map(key=>{
+      if (!activeIn(a,key) || !monthDoc(key,false)) return `<td><span class="reccell none">—</span></td>`;
+      const won = areaMonthWin(key,a), v = monthVerdict(key,won);
+      const p = Math.round(areaMonthPct(key,a)*100);
+      return `<td><span class="reccell ${v}">${v==="win"?"WON":v==="loss"?"LOST "+p+"%":p+"%"}</span></td>`;
+    }).join("");
+    const live = months.filter(k=>activeIn(a,k) && monthDoc(k,false) && monthEnded(k));
+    const w = live.filter(k=>areaMonthWin(k,a)).length;
+    return `<tr><td>${esc(a.name)}</td>${cells}<td class="cg-trail ${w&&w===live.length?"good":""}">${w}/${live.length}</td></tr>`;
+  }).join("");
+  const overall = months.map(key=>{
+    if (!monthDoc(key,false)) return `<td><span class="reccell none">—</span></td>`;
+    const won = overallMonthWin(key), v = monthVerdict(key,won);
+    return `<td><span class="reccell ${v}">${v==="win"?"WON":v==="loss"?"LOST "+Math.round(overallPct(key)*100)+"%":Math.round(overallPct(key)*100)+"%"}</span></td>`;
+  }).join("");
+  return `<div class="panel">
+    <div class="panel-head"><div><h3>Month record</h3>
+      <p class="sub">A key area wins the month by winning every one of its weeks. Percentages show how close a lost month was.</p></div></div>
+    <div class="recgrid"><table class="rec">
+      <thead><tr><th>Key area</th>${months.map(k=>`<th>${monthLabel(k,true)}</th>`).join("")}<th>Won</th></tr></thead>
+      <tbody>${rows}<tr style="border-top:2px solid var(--line-strong)"><td style="font-family:Archivo;text-transform:uppercase;font-size:12px;letter-spacing:.05em">Everything</td>${overall}<td></td></tr></tbody>
+    </table></div></div>`;
+}
+
+/* 4 — loss attribution */
+function panelAttribution(months){
+  const items = tasksOf(areasOver(months)).filter(x=>!isMonthly(x.t)).map(x=>({...x, r:taskRecord(x.a,x.t)}))
+    .filter(x=>x.r.total>0)
+    .sort((p,q)=>(q.r.near+q.r.loss)-(p.r.near+p.r.loss) || q.r.loss-p.r.loss);
+  if (!items.length) return "";
+  const rows = items.map(({t,a,r})=>{
+    const w = n => (n/r.total*100).toFixed(1)+"%";
+    return `<div class="attrrow">
+      <div class="nm">${esc(t.name)}</div>
+      <div class="bar" title="${r.win} won, ${r.near} missed by 1, ${r.loss} missed">
+        ${r.win?`<i class="b-win" style="width:${w(r.win)}"></i>`:""}
+        ${r.near?`<i class="b-near" style="width:${w(r.near)}"></i>`:""}
+        ${r.loss?`<i class="b-loss" style="width:${w(r.loss)}"></i>`:""}
+      </div>
+      <div class="n">${r.win}W · ${r.near?r.near+"×−1 · ":""}${r.loss}L</div></div>`;
+  }).join("");
+  return `<div class="panel">
+    <div class="panel-head"><div><h3>What's costing you</h3>
+      <p class="sub">Ranked by weeks lost. A task that keeps missing by one tick is a scheduling problem; one that misses by three is a wrong target.</p></div></div>
+    <div class="legend"><span><i class="sw" style="background:var(--win)"></i>Won</span>
+      <span><i class="sw" style="background:var(--near-line)"></i>Missed by 1</span>
+      <span><i class="sw" style="background:var(--loss)"></i>Missed by 2+</span></div>
+    <div class="attr">${rows}</div></div>`;
+}
+
+/* 5 — day-of-week profile */
+function panelDow(months){
+  const tl = weekTimeline();
+  const cards = tasksOf(areasOver(months)).filter(x=>!isMonthly(x.t)).map(({t,a})=>{
+    const hit = Array(7).fill(0), opp = Array(7).fill(0);
+    tl.forEach(w=>{
+      if (!monthDoc(w.key,false) || !liveIn(a,t,w.key)) return;
+      const arr = readWeek(w.key,w.mon,t.id);
+      for (let d=0; d<7; d++){
+        if (addDays(w.mon,d) > today()) continue;
+        opp[d]++; if (arr[d]) hit[d]++;
+      }
+    });
+    if (!opp.some(o=>o>0)) return null;
+    const rates = hit.map((h,i)=>opp[i] ? h/opp[i] : 0);
+    const bars = rates.map((r,i)=>{
+      const cls = r>=.7 ? "" : r>=.4 ? "mid" : "weak";
+      return `<div><i class="${cls}" style="height:${Math.max(3,Math.round(r*100))}%" title="${DAYFULL[i]}: ${hit[i]} of ${opp[i]}"></i></div>`;
+    }).join("");
+    return `<div class="dow"><div class="nm">${esc(t.name)}</div>
+      <div class="dowbars">${bars}</div>
+      <div class="dowlabels">${DAYS.map(d=>`<span>${d}</span>`).join("")}</div></div>`;
+  }).filter(Boolean);
+  if (!cards.length) return "";
+  return `<div class="panel">
+    <div class="panel-head"><div><h3>Which day breaks</h3>
+      <p class="sub">Share of that weekday you completed the task. Bars only exist because weeks are real Mon–Sun weeks — a fixed 7-day block would smear this.</p></div></div>
+    <div class="dowgrid">${cards.join("")}</div></div>`;
+}
+
+/* 6 — recalibration flags */
+function panelFlags(months){
+  const flags = [];
+  const scoped = areasOver(months);
+  tasksOf(scoped).filter(x=>!isMonthly(x.t)).forEach(({t,a})=>{
+    const r = taskRecord(a,t);
+    if (r.total < 3) return;
+    if (r.win === 0 && r.total >= 4)
+      flags.push(["rethink","Rethink the target", `<b>${esc(t.name)}</b> has not hit ${t.target}× once in ${r.total} weeks. That reads as a target set too high rather than a discipline gap — try ${Math.max(1,t.target-2)}× and win it consistently first.`]);
+    else if (r.near > 0 && r.near >= (r.near+r.loss)/2 && r.near+r.loss >= 3)
+      flags.push(["close","So close", `<b>${esc(t.name)}</b> missed by a single tick ${r.near} of ${r.near+r.loss} times it lost. The target is right; one more slot in the week fixes ${esc(a.name)}.`]);
+    else if (r.win === r.total && r.total >= 8)
+      flags.push(["raise","Room to raise", `<b>${esc(t.name)}</b> is ${r.total} for ${r.total}. Either raise it above ${t.target}× or stop spending a checkbox on something automatic.`]);
+  });
+  // the single biggest blocker per area
+  scoped.filter(a=>a.tasks.length>1).forEach(a=>{
+    const weekly = a.tasks.filter(t=>!isMonthly(t));
+    if (weekly.length < 2) return;
+    const recs = weekly.map(t=>({t, r:taskRecord(a,t)})).filter(x=>x.r.total>0);
+    if (!recs.length) return;
+    const worst = recs.reduce((p,q)=>(q.r.near+q.r.loss)>(p.r.near+p.r.loss)?q:p);
+    const others = recs.filter(x=>x.t.id!==worst.t.id);
+    const lost = worst.r.near + worst.r.loss;
+    if (lost >= 2 && others.every(x=>x.r.near+x.r.loss < lost))
+      flags.push(["rethink","Blocker", `<b>${esc(a.name)}</b> is held back by <b>${esc(worst.t.name)}</b> — it lost ${lost} of ${worst.r.total} weeks, more than every other task in the area combined would suggest. Fix this one and the area follows.`]);
+  });
+  if (!flags.length)
+    flags.push(["close","Not enough history yet","Two or three more weeks of ticks and this panel starts telling you which targets are wrong and which are just missed narrowly."]);
+  return `<div class="panel">
+    <div class="panel-head"><div><h3>What to change</h3>
+      <p class="sub">Read straight off the numbers above, not from anything you've told me.</p></div></div>
+    <div class="flags">${flags.map(([c,l,txt])=>`<div class="flag"><span class="tag ${c}">${l}</span><span>${txt}</span></div>`).join("")}</div></div>`;
+}
+
+/* ---------- tabs ---------- */
+function setTab(t){
+  tab = t;
+  document.getElementById("tabTrack").setAttribute("aria-selected", t==="track");
+  document.getElementById("tabReport").setAttribute("aria-selected", t==="report");
+  document.getElementById("viewTrack").hidden = mod!=="habit" || t!=="track";
+  document.getElementById("viewReport").hidden = mod!=="habit" || t!=="report";
+  document.querySelector(".monthnav").style.visibility = t==="track" ? "visible" : "hidden";
+  uiSave();
+  if (mod!=="habit") return;
+  if (t==="report"){ renderReport(); loadAllMonths().then(()=>{ if (tab==="report") renderReport(); }); }
+  else renderTrack();
+}
+document.getElementById("tabTrack").onclick = ()=>setTab("track");
+document.getElementById("tabReport").onclick = ()=>setTab("report");
+document.getElementById("prevM").onclick = ()=>{ view = shiftMonth(view,-1); loadMonth(view).then(renderTrack); renderTrack(); };
+document.getElementById("nextM").onclick = ()=>{ view = shiftMonth(view, 1); loadMonth(view).then(renderTrack); renderTrack(); };
+document.getElementById("showAddArea").onclick = e=>{
+  e.target.hidden = true;
+  const f = document.getElementById("addAreaForm"); f.hidden = false; f.querySelector("input").focus();
+};
+document.getElementById("cancelAddArea").onclick = ()=>{
+  document.getElementById("addAreaForm").hidden = true;
+  document.getElementById("showAddArea").hidden = false;
+};
+document.getElementById("addAreaForm").onsubmit = e=>{
+  e.preventDefault();
+  const name = document.getElementById("newAreaName").value.trim();
+  if (!name) return;
+  state.areas.push({id:uid(), name, tasks:[], from:view});
+  document.getElementById("newAreaName").value = "";
+  document.getElementById("addAreaForm").hidden = true;
+  document.getElementById("showAddArea").hidden = false;
+  persistConfig(); renderTrack();
+};
+
+/* ================================================================
+   EXPENSE MODULE — self-contained. Its own state, its own storage keys,
+   its own toggle. Shares only the date/format helpers and the app shell.
+   Months here are plain calendar months, not the habit module's ISO months.
+   ================================================================ */
+const EXP_LS = "lifetracker-expenses-v1";
+const UI_LS  = "lifetracker-ui-v1";
+const UNCAT  = "__uncat__";
+
+// months["YYYY-MM"] = [expense, ...]   income["YYYY-MM"] = [income, ...]
+// income carries no date — it belongs to the month as a whole
+let expState = { cats: [], months: {}, income: {} };
+let mod = "habit", expTab = "record";
+let expView = ymd(today()).slice(0,7);
+let expOpenDays = {}, expOpenCat = null, expDraft = null;
+
+const monthOf = dateStr => dateStr.slice(0,7);
+function expUid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+// strictly increasing, so two entries saved in the same millisecond still order correctly
+let expStampLast = 0;
+function expStamp(){
+  const n = Date.now();
+  expStampLast = n > expStampLast ? n : expStampLast + 1;
+  return expStampLast;
+}
+function inr(n){
+  const d = Math.round(n*100)%100 === 0 ? 0 : 2;
+  return "₹" + new Intl.NumberFormat("en-IN",{minimumFractionDigits:d, maximumFractionDigits:2}).format(n);
+}
+function niceDate(s){
+  const d = new Date(s+"T00:00:00");
+  return DAYFULL[(d.getDay()+6)%7] + ", " + d.getDate() + " " + MSHORT[d.getMonth()];
+}
+function relDay(s){
+  const diff = Math.round((today() - new Date(s+"T00:00:00"))/86400000);
+  return diff===0 ? "Today" : diff===1 ? "Yesterday" : null;
+}
+
+/* ---- categories ---- */
+function catList(){ return expState.cats.slice().sort((a,b)=>a.name.localeCompare(b.name)); }
+function catName(id){
+  if (id === UNCAT) return "Uncategorised";
+  const c = expState.cats.find(c=>c.id===id);
+  return c ? c.name : "Uncategorised";
+}
+function catExists(name, exceptId){
+  const n = name.trim().toLowerCase();
+  return expState.cats.some(c=>c.name.trim().toLowerCase()===n && c.id!==exceptId);
+}
+function addCat(name){
+  const nm = name.trim();
+  if (!nm) return null;
+  const dupe = expState.cats.find(c=>c.name.trim().toLowerCase()===nm.toLowerCase());
+  if (dupe) return dupe.id;
+  const c = {id:expUid(), name:nm};
+  expState.cats.push(c);
+  expPersistCats();
+  return c.id;
+}
+
+/* ---- expenses ---- */
+function expMonth(key,create){
+  let m = expState.months[key];
+  if (!m){ if (!create) return []; m = expState.months[key] = []; }
+  return m;
+}
+function allExpenses(){ return Object.values(expState.months).flat(); }
+function expensesOn(dateStr){
+  return expMonth(monthOf(dateStr)).filter(e=>e.date===dateStr)
+    .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+}
+function dayTotal(dateStr){ return expensesOn(dateStr).reduce((s,e)=>s+e.amount,0); }
+function findExp(id){
+  for (const k of Object.keys(expState.months)){
+    const e = expState.months[k].find(x=>x.id===id);
+    if (e) return {e, key:k};
+  }
+  return null;
+}
+function saveExp(data, id){
+  const key = monthOf(data.date);
+  if (id){
+    const found = findExp(id);
+    if (found){
+      // a date change can move the expense into a different month bucket
+      expState.months[found.key] = expState.months[found.key].filter(x=>x.id!==id);
+      expPersistMonth(found.key);
+      const merged = Object.assign({}, found.e, data);
+      expMonth(key,true).push(merged);
+      expPersistMonth(key);
+      return;
+    }
+  }
+  expMonth(key,true).push(Object.assign({id:expUid(), createdAt:expStamp()}, data));
+  expPersistMonth(key);
+}
+function removeExp(id){
+  const found = findExp(id);
+  if (!found) return;
+  expState.months[found.key] = expState.months[found.key].filter(x=>x.id!==id);
+  expPersistMonth(found.key);
+}
+
+/* ---- income: attributed to a whole month, never to a day ---- */
+function incMonth(key,create){
+  let m = expState.income[key];
+  if (!m){ if (!create) return []; m = expState.income[key] = []; }
+  return m;
+}
+function incItems(key){ return incMonth(key).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)); }
+function incTotal(key){ return incMonth(key).reduce((s,r)=>s+r.amount,0); }
+function findInc(id){
+  for (const k of Object.keys(expState.income)){
+    const r = expState.income[k].find(x=>x.id===id);
+    if (r) return {r, key:k};
+  }
+  return null;
+}
+function saveInc(data, id){
+  const key = data.month;
+  if (id){
+    const f = findInc(id);
+    if (f){
+      expState.income[f.key] = expState.income[f.key].filter(x=>x.id!==id);
+      expPersistMonth(f.key);
+      incMonth(key,true).push(Object.assign({}, f.r, data));
+      expPersistMonth(key);
+      return;
+    }
+  }
+  incMonth(key,true).push(Object.assign({id:expUid(), createdAt:expStamp()}, data));
+  expPersistMonth(key);
+}
+function removeInc(id){
+  const f = findInc(id);
+  if (!f) return;
+  expState.income[f.key] = expState.income[f.key].filter(x=>x.id!==id);
+  expPersistMonth(f.key);
+}
+
+/* ---- month analysis ---- */
+function monthItems(key){
+  return expMonth(key).slice().sort((a,b)=>
+    b.date.localeCompare(a.date) || (b.createdAt||0)-(a.createdAt||0));
+}
+function monthTotal(key){ return expMonth(key).reduce((s,e)=>s+e.amount,0); }
+function breakdown(key){
+  const map = {};
+  expMonth(key).forEach(e=>{
+    const id = expState.cats.some(c=>c.id===e.cat) ? e.cat : UNCAT;
+    (map[id] = map[id] || {id, total:0, n:0}).total += e.amount;
+    map[id].n++;
+  });
+  const tot = monthTotal(key) || 1;
+  return Object.values(map).map(r=>({...r, name:catName(r.id), pc:r.total/tot*100}))
+    .sort((a,b)=>b.total-a.total);
+}
+
+/* ---- persistence (separate keys from the habit module) ---- */
+function expLsSave(){ try{ localStorage.setItem(EXP_LS, JSON.stringify(expState)); }catch(e){} }
+function uiSave(){
+  try{ localStorage.setItem(UI_LS, JSON.stringify({mod, habitTab:tab, expTab, expView})); }catch(e){}
+}
+function expPersistCats(){
+  expLsSave();
+  debounce("expcats", async ()=>{
+    if (!db) return;
+    try{ await db.doc("expense/cats").set({cats: expState.cats}); note("saved"); }
+    catch(e){ note("saved on this device only"); }
+  }, 400);
+}
+function expPersistMonth(key){
+  expLsSave();
+  debounce("expm-"+key, async ()=>{
+    if (!db) return;
+    try{ await db.doc("expense/m-"+key).set({items: expMonth(key), income: incMonth(key)}); note("saved"); }
+    catch(e){ note("saved on this device only"); }
+  }, 450);
+}
+async function expLoadAll(){
+  if (!db) return;
+  try{
+    const c = snapData(await db.doc("expense/cats").get());
+    if (c && Array.isArray(c.cats)) expState.cats = c.cats;
+  }catch(e){}
+  try{
+    const res = await db.collection("expense").get();
+    const docs = Array.isArray(res) ? res : (res && Array.isArray(res.docs) ? res.docs : []);
+    docs.forEach(doc=>{
+      const id = doc && (doc.id || (doc.data && doc.data.id));
+      if (!id || String(id).slice(0,2) !== "m-") return;
+      const data = typeof doc.data === "function" ? doc.data() : (doc.data || doc);
+      const k = String(id).slice(2);
+      if (data && Array.isArray(data.items))  expState.months[k] = data.items;
+      if (data && Array.isArray(data.income)) expState.income[k] = data.income;
+    });
+  }catch(e){
+    // fall back to the months the Record view actually needs
+    let k = ymd(today()).slice(0,7);
+    for (let i=0;i<2;i++){
+      try{
+        const d = snapData(await db.doc("expense/m-"+k).get());
+        if (d && Array.isArray(d.items))  expState.months[k] = d.items;
+        if (d && Array.isArray(d.income)) expState.income[k] = d.income;
+      }catch(_){}
+      k = shiftMonth(k,-1);
+    }
+  }
+  expLsSave();
+}
+
+/* ---- one expense row ---- */
+function expRow(e){
+  return `<div class="erow">
+    <span class="enm"><b>${esc(e.name)}</b><span class="ecat">${esc(catName(e.cat))}</span></span>
+    <span class="eamt">${inr(e.amount)}</span>
+    <span class="etools">
+      <button class="iconbtn" data-eedit="${e.id}" title="Edit" aria-label="Edit ${esc(e.name)}">✎</button>
+      <button class="iconbtn" data-edel="${e.id}" title="Delete" aria-label="Delete ${esc(e.name)}">✕</button>
+    </span></div>`;
+}
+
+/* ---- RECORD view ---- */
+function renderExpRecord(){
+  const el = document.getElementById("viewExpRecord");
+  const td = ymd(today());
+  const mine = expensesOn(td);
+
+  const past = [];
+  for (let i=1;i<=6;i++) past.push(ymd(addDays(today(),-i)));
+
+  el.innerHTML = `
+    <section class="esec">
+      <div class="esec-head">
+        <div><h3>Today</h3><p class="esub">${niceDate(td)}</p></div>
+        <span class="spacer"></span>
+        <span class="etot accent">${inr(dayTotal(td))}</span>
+      </div>
+      ${mine.length ? mine.map(expRow).join("")
+        : `<div class="eempty">Nothing recorded yet today.</div>`}
+      <div class="eday-add"><button class="btn primary" data-eadd="${td}">+ Add expense</button></div>
+    </section>
+
+    <section class="esec">
+      <div class="esec-head"><div><h3>Last 6 days</h3>
+        <p class="esub">Tap a day to open it · ${inr(past.reduce((s,d)=>s+dayTotal(d),0))} total</p></div></div>
+      ${past.map(d=>{
+        const open = !!expOpenDays[d], items = expensesOn(d);
+        return `<div class="eday ${open?"open":""}">
+          <button class="eday-btn" data-eday="${d}" aria-expanded="${open}">
+            <span class="chev">▶</span>
+            <span><span class="dlab">${relDay(d) || niceDate(d).split(", ")[0]}</span>
+              <span class="dsub">${niceDate(d).split(", ")[1] || niceDate(d)}</span></span>
+            <span class="eamt">${items.length ? inr(dayTotal(d)) : "—"}</span>
+          </button>
+          ${open ? `<div class="eday-body">
+            ${items.length ? items.map(expRow).join("") : `<div class="eempty">Nothing on this day.</div>`}
+            <div class="eday-add"><button class="btn" data-eadd="${d}">+ Add to this day</button></div>
+          </div>` : ""}
+        </div>`;
+      }).join("")}
+    </section>`;
+  bindExp();
+}
+
+/* ---- TRACK view ---- */
+function renderExpTrack(){
+  const el = document.getElementById("viewExpTrack");
+  const key = expView, items = monthItems(key), rows = breakdown(key), tot = monthTotal(key);
+
+  const byDate = {};
+  items.forEach(e=>(byDate[e.date] = byDate[e.date] || []).push(e));
+  const dates = Object.keys(byDate).sort().reverse();
+
+  el.innerHTML = `
+    <section class="esec">
+      <div class="esec-head">
+        <div class="emonthnav">
+          <button id="expPrev" aria-label="Previous month">‹</button>
+          <div class="elabel">${monthLabel(key)}</div>
+          <button id="expNext" aria-label="Next month">›</button>
+        </div>
+        <span class="spacer"></span>
+        <div style="text-align:right">
+          <p class="esub">Total spend</p>
+          <span class="etot accent">${inr(tot)}</span>
+        </div>
+      </div>
+      <div class="esec-head" style="border-top:1px solid var(--line);border-bottom:none;padding-bottom:6px">
+        <div><h3>Where it went</h3>
+          <p class="esub">${rows.length} categor${rows.length===1?"y":"ies"} · ${items.length} transaction${items.length===1?"":"s"}</p></div>
+      </div>
+      ${rows.length ? rows.map(r=>`
+        <button class="cbar" data-ecat="${r.id}" aria-expanded="${expOpenCat===r.id}">
+          <span class="cnm">${esc(r.name)}</span>
+          <span class="ctrack"><i style="width:${r.pc.toFixed(1)}%"></i></span>
+          <span class="cpc">${r.pc.toFixed(1)}% · ${r.n}</span>
+          <span class="camt">${inr(r.total)}</span>
+        </button>
+        ${expOpenCat===r.id ? `<div class="cdrill">${
+          expMonth(key).filter(e=>(expState.cats.some(c=>c.id===e.cat)?e.cat:UNCAT)===r.id)
+            .sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||0)-(a.createdAt||0))
+            .map(e=>`<div class="erow">
+              <span class="enm"><b>${esc(e.name)}</b><span class="ecat">${niceDate(e.date)}</span></span>
+              <span class="eamt">${inr(e.amount)}</span>
+              <span class="etools">
+                <button class="iconbtn" data-eedit="${e.id}" title="Edit">✎</button>
+                <button class="iconbtn" data-edel="${e.id}" title="Delete">✕</button></span></div>`).join("")
+        }</div>` : ""}
+      `).join("") : `<div class="eempty">No spending recorded in ${monthLabel(key)}.</div>`}
+    </section>
+
+    <section class="esec">
+      <div class="esec-head"><div><h3>All of ${monthLabel(key,true)}</h3>
+        <p class="esub">Newest first · full history lives here</p></div>
+        <span class="spacer"></span>
+        <button class="btn primary" data-eadd="${key===ymd(today()).slice(0,7) ? ymd(today()) : key+"-01"}">+ Add expense</button></div>
+      ${dates.length ? dates.map(d=>`
+        <div class="eday open">
+          <div class="eday-btn" style="cursor:default">
+            <span class="chev" style="opacity:0">▶</span>
+            <span><span class="dlab">${relDay(d) || niceDate(d)}</span>
+              ${relDay(d) ? `<span class="dsub">${niceDate(d)}</span>` : ""}</span>
+            <span class="eamt">${inr(byDate[d].reduce((s,e)=>s+e.amount,0))}</span>
+          </div>
+          <div class="eday-body">${byDate[d].map(expRow).join("")}</div>
+        </div>`).join("") : `<div class="eempty">Nothing here yet.</div>`}
+    </section>
+
+    <section class="esec">
+      <div class="esec-head">
+        <div><h3>Income</h3><p class="esub">Recorded against ${monthLabel(key,true)} as a whole — no dates</p></div>
+        <span class="spacer"></span>
+        <div style="text-align:right">
+          <p class="esub">Received</p>
+          <span class="etot" style="color:var(--good)">${inr(incTotal(key))}</span>
+        </div>
+      </div>
+      ${incItems(key).length ? incItems(key).map(r=>`<div class="erow">
+        <span class="enm"><b>${esc(r.name)}</b></span>
+        <span class="eamt" style="color:var(--good)">${inr(r.amount)}</span>
+        <span class="etools">
+          <button class="iconbtn" data-iedit="${r.id}" title="Edit">✎</button>
+          <button class="iconbtn" data-idel="${r.id}" title="Delete">✕</button></span></div>`).join("")
+        : `<div class="eempty">No income recorded for ${monthLabel(key,true)}.</div>`}
+      ${incTotal(key) ? `<div class="erow" style="border-top:1px solid var(--line-strong)">
+        <span class="enm"><b>Left over</b><span class="ecat">income minus spend</span></span>
+        <span class="eamt" style="color:${incTotal(key)-tot >= 0 ? "var(--good)" : "var(--red)"}">${
+          (incTotal(key)-tot < 0 ? "−" : "") + inr(Math.abs(incTotal(key)-tot))}</span>
+        <span></span></div>` : ""}
+      <div class="eday-add"><button class="btn" id="incAdd">+ Add income</button></div>
+    </section>
+
+    <section class="esec">
+      <div class="esec-head"><div><h3>Categories</h3>
+        <p class="esub">Renaming keeps every tagged expense · deleting moves them to Uncategorised</p></div></div>
+      <div class="catmgr">
+        ${catList().length ? catList().map(c=>{
+          const n = allExpenses().filter(e=>e.cat===c.id).length;
+          return `<div class="catrow">
+            <span class="cn">${esc(c.name)}</span>
+            <span class="cc">${n} entr${n===1?"y":"ies"}</span>
+            <button class="iconbtn" data-cren="${c.id}" title="Rename">✎</button>
+            <button class="iconbtn" data-cdel="${c.id}" title="Delete">✕</button></div>`;
+        }).join("") : `<p class="esub" style="padding:8px 0">No categories yet — create one when you add an expense.</p>`}
+      </div>
+    </section>`;
+  bindExp();
+}
+
+/* ---- the add / edit form ---- */
+function openExpForm(opts){
+  expDraft = opts;
+  const wrap = document.getElementById("expFormWrap");
+  const sel = document.getElementById("fCat");
+  const isEdit = !!opts.id;
+  const existing = isEdit ? (findExp(opts.id) || {}).e : null;
+
+  document.getElementById("expFormTitle").textContent = isEdit ? "Edit expense" : "Add expense";
+  document.getElementById("fName").value = existing ? existing.name : "";
+  document.getElementById("fAmt").value  = existing ? String(existing.amount) : "";
+  document.getElementById("fDate").value = existing ? existing.date : (opts.date || ymd(today()));
+  document.getElementById("fErr").textContent = "";
+  document.getElementById("fDelete").hidden = !isEdit;
+  document.getElementById("fNewCat").value = "";
+  document.getElementById("newCatRow").classList.remove("show");
+
+  sel.innerHTML = catList().map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")
+    + `<option value="${UNCAT}">Uncategorised</option>`
+    + `<option value="__new__">+ New category…</option>`;
+  sel.value = existing ? (expState.cats.some(c=>c.id===existing.cat) ? existing.cat : UNCAT)
+            : (catList()[0] ? catList()[0].id : "__new__");
+  if (sel.value === "__new__") document.getElementById("newCatRow").classList.add("show");
+
+  wrap.hidden = false;
+  document.getElementById("fName").focus();
+}
+function closeExpForm(){
+  document.getElementById("expFormWrap").hidden = true;
+  expDraft = null;
+}
+document.getElementById("fCat").onchange = e=>{
+  const row = document.getElementById("newCatRow");
+  if (e.target.value === "__new__"){ row.classList.add("show"); document.getElementById("fNewCat").focus(); }
+  else row.classList.remove("show");
+};
+document.getElementById("fCancel").onclick = closeExpForm;
+document.getElementById("expFormWrap").onclick = e=>{ if (e.target.id === "expFormWrap") closeExpForm(); };
+addEventListener("keydown", e=>{
+  if (e.key === "Escape" && !document.getElementById("expFormWrap").hidden) closeExpForm();
+});
+document.getElementById("fDelete").onclick = ()=>{
+  if (!expDraft || !expDraft.id) return;
+  const f = findExp(expDraft.id);
+  if (!f || !confirm(`Delete "${f.e.name}" (${inr(f.e.amount)})? This cannot be undone.`)) return;
+  removeExp(expDraft.id);
+  closeExpForm(); renderExp();
+};
+document.getElementById("expForm").onsubmit = e=>{
+  e.preventDefault();
+  const err = document.getElementById("fErr");
+  const name = document.getElementById("fName").value.trim();
+  const raw  = document.getElementById("fAmt").value.trim().replace(/[₹,\s]/g,"");
+  const date = document.getElementById("fDate").value;
+  let cat = document.getElementById("fCat").value;
+
+  if (!name) return void (err.textContent = "Give it a name.");
+  if (!/^\d*\.?\d{0,2}$/.test(raw) || raw === "" || raw === ".")
+    return void (err.textContent = "Enter an amount — digits, up to two decimal places.");
+  const amount = Math.round(parseFloat(raw)*100)/100;
+  if (!(amount > 0)) return void (err.textContent = "Amount has to be more than zero.");
+  if (!date) return void (err.textContent = "Pick a date.");
+
+  if (cat === "__new__"){
+    const nm = document.getElementById("fNewCat").value.trim();
+    if (!nm) return void (err.textContent = "Name the new category, or pick an existing one.");
+    if (catExists(nm)) return void (err.textContent = `"${nm}" already exists — pick it from the list.`);
+    cat = addCat(nm);
+  }
+  saveExp({name, amount, cat, date}, expDraft && expDraft.id);
+  // follow the entry to its date so it is visible after saving
+  if (mod === "exp" && expTab === "record") expOpenDays[date] = true;
+  if (mod === "exp" && expTab === "track") expView = monthOf(date);
+  closeExpForm(); renderExp();
+};
+
+/* ---- income form ---- */
+let incDraft = null;
+function openIncForm(opts){
+  incDraft = opts || {};
+  const existing = incDraft.id ? (findInc(incDraft.id) || {}).r : null;
+  document.getElementById("incFormTitle").textContent = existing ? "Edit income" : "Add income";
+  document.getElementById("iName").value  = existing ? existing.name : "";
+  document.getElementById("iAmt").value   = existing ? String(existing.amount) : "";
+  document.getElementById("iMonth").value = existing ? existing.month : (incDraft.month || expView);
+  document.getElementById("iErr").textContent = "";
+  document.getElementById("iDelete").hidden = !existing;
+  document.getElementById("incFormWrap").hidden = false;
+  document.getElementById("iName").focus();
+}
+function closeIncForm(){ document.getElementById("incFormWrap").hidden = true; incDraft = null; }
+document.getElementById("iCancel").onclick = closeIncForm;
+document.getElementById("incFormWrap").onclick = e=>{ if (e.target.id === "incFormWrap") closeIncForm(); };
+addEventListener("keydown", e=>{
+  if (e.key === "Escape" && !document.getElementById("incFormWrap").hidden) closeIncForm();
+});
+document.getElementById("iDelete").onclick = ()=>{
+  if (!incDraft || !incDraft.id) return;
+  const f = findInc(incDraft.id);
+  if (!f || !confirm(`Delete income "${f.r.name}" (${inr(f.r.amount)})? This cannot be undone.`)) return;
+  removeInc(incDraft.id); closeIncForm(); renderExpTrack();
+};
+document.getElementById("incForm").onsubmit = e=>{
+  e.preventDefault();
+  const err = document.getElementById("iErr");
+  const name = document.getElementById("iName").value.trim();
+  const raw = document.getElementById("iAmt").value.trim().replace(/[₹,\s]/g,"");
+  const month = document.getElementById("iMonth").value;
+  if (!name) return void (err.textContent = "Name the source.");
+  if (!/^\d*\.?\d{0,2}$/.test(raw) || raw === "" || raw === ".")
+    return void (err.textContent = "Enter an amount — digits, up to two decimal places.");
+  const amount = Math.round(parseFloat(raw)*100)/100;
+  if (!(amount > 0)) return void (err.textContent = "Amount has to be more than zero.");
+  if (!/^\d{4}-\d{2}$/.test(month)) return void (err.textContent = "Pick a month.");
+  saveInc({name, amount, month}, incDraft && incDraft.id);
+  expView = month;
+  closeIncForm(); uiSave(); renderExpTrack();
+};
+
+/* ---- expense event wiring ---- */
+function bindExp(){
+  document.querySelectorAll("[data-eadd]").forEach(b=>b.onclick = ()=>openExpForm({date:b.dataset.eadd}));
+  document.querySelectorAll("[data-eedit]").forEach(b=>b.onclick = ()=>openExpForm({id:b.dataset.eedit}));
+  document.querySelectorAll("[data-edel]").forEach(b=>b.onclick = ()=>{
+    const f = findExp(b.dataset.edel);
+    if (!f || !confirm(`Delete "${f.e.name}" (${inr(f.e.amount)})? This cannot be undone.`)) return;
+    removeExp(b.dataset.edel); renderExp();
+  });
+  document.querySelectorAll("[data-eday]").forEach(b=>b.onclick = ()=>{
+    const d = b.dataset.eday;
+    expOpenDays[d] = !expOpenDays[d];
+    renderExpRecord();
+  });
+  document.querySelectorAll("[data-ecat]").forEach(b=>b.onclick = ()=>{
+    expOpenCat = expOpenCat === b.dataset.ecat ? null : b.dataset.ecat;
+    renderExpTrack();
+  });
+  document.querySelectorAll("[data-cren]").forEach(b=>b.onclick = ()=>{
+    const c = expState.cats.find(x=>x.id===b.dataset.cren);
+    if (!c) return;
+    const nm = prompt("Rename category:", c.name);
+    if (nm === null) return;
+    const t = nm.trim();
+    if (!t) return;
+    if (catExists(t, c.id)) return void alert(`"${t}" already exists.`);
+    c.name = t; expPersistCats(); renderExp();
+  });
+  document.querySelectorAll("[data-cdel]").forEach(b=>b.onclick = ()=>{
+    const c = expState.cats.find(x=>x.id===b.dataset.cdel);
+    if (!c) return;
+    const n = allExpenses().filter(e=>e.cat===c.id).length;
+    if (!confirm(`Delete "${c.name}"? ${n ? n+" expense"+(n===1?"":"s")+" move to Uncategorised — nothing is lost." : "It has no expenses."}`)) return;
+    const touched = new Set();
+    Object.keys(expState.months).forEach(k=>expState.months[k].forEach(e=>{
+      if (e.cat === c.id){ e.cat = UNCAT; touched.add(k); }
+    }));
+    expState.cats = expState.cats.filter(x=>x.id!==c.id);
+    expPersistCats();
+    touched.forEach(expPersistMonth);
+    renderExp();
+  });
+  const ia = document.getElementById("incAdd");
+  if (ia) ia.onclick = ()=>openIncForm({month:expView});
+  document.querySelectorAll("[data-iedit]").forEach(b=>b.onclick = ()=>openIncForm({id:b.dataset.iedit}));
+  document.querySelectorAll("[data-idel]").forEach(b=>b.onclick = ()=>{
+    const f = findInc(b.dataset.idel);
+    if (!f || !confirm(`Delete income "${f.r.name}" (${inr(f.r.amount)})? This cannot be undone.`)) return;
+    removeInc(b.dataset.idel); renderExpTrack();
+  });
+  const p = document.getElementById("expPrev"), n = document.getElementById("expNext");
+  if (p) p.onclick = ()=>{ expView = shiftMonth(expView,-1); expOpenCat = null; uiSave(); renderExpTrack(); };
+  if (n) n.onclick = ()=>{ expView = shiftMonth(expView, 1); expOpenCat = null; uiSave(); renderExpTrack(); };
+}
+function renderExp(){ expTab === "record" ? renderExpRecord() : renderExpTrack(); }
+
+/* ---- module + expense toggle ---- */
+function setExpTab(t){
+  expTab = t;
+  document.getElementById("tabRecord").setAttribute("aria-selected", t==="record");
+  document.getElementById("tabSpend").setAttribute("aria-selected", t==="track");
+  document.getElementById("viewExpRecord").hidden = t!=="record";
+  document.getElementById("viewExpTrack").hidden = t!=="track";
+  uiSave(); renderExp();
+}
+function setMod(m){
+  mod = m;
+  const isExp = m === "exp";
+  if (isExp) document.documentElement.setAttribute("data-mod","exp");
+  else document.documentElement.removeAttribute("data-mod");
+
+  // the button always points at the module you are not in, in that module's colour
+  const b = document.getElementById("modBtn");
+  b.textContent = isExp ? "5minritual" : "Expense Tracker";
+  b.className = "modbtn " + (isExp ? "to-habit" : "to-exp");
+
+  document.getElementById("tabsHabit").hidden = isExp;
+  document.getElementById("tabsExp").hidden = !isExp;
+  document.querySelector(".hdr-right .monthnav").style.display = isExp ? "none" : "";
+  document.getElementById("viewTrack").hidden = isExp || tab!=="track";
+  document.getElementById("viewReport").hidden = isExp || tab!=="report";
+  document.getElementById("viewExpRecord").hidden = !isExp || expTab!=="record";
+  document.getElementById("viewExpTrack").hidden = !isExp || expTab!=="track";
+
+  uiSave();
+  if (isExp) renderExp(); else (tab==="track" ? renderTrack : renderReport)();
+}
+document.getElementById("modBtn").onclick = ()=> setMod(mod==="exp" ? "habit" : "exp");
+document.getElementById("tabRecord").onclick = ()=> setExpTab("record");
+document.getElementById("tabSpend").onclick = ()=> setExpTab("track");
+
+/* ---------- reset everything ----------
+   Clears this browser's copy AND the synced copy, so the data cannot simply
+   come back from whichever side survived. Two-step confirmation because it
+   is irreversible. */
+async function wipeAll(){
+  if (!confirm("Delete every key area, task, tick, expense, category and income entry?\n\nThis clears this device AND the synced copy. It cannot be undone.")) return;
+  if ((prompt('Type DELETE to confirm.') || "").trim().toUpperCase() !== "DELETE"){
+    note("reset cancelled");
+    return;
+  }
+  note("clearing…");
+  // learn every month document that exists before clearing, so none is missed
+  if (db){
+    try{ loadedAll = false; await loadAllMonths(); await expLoadAll(); }catch(e){}
+    try{
+      for (const k of Object.keys(state.months)) await db.doc("tracker/m-"+k).set({weeks:{}, monthly:{}});
+      await db.doc("tracker/config").set({areas:[], schema:2});
+      const ks = new Set([...Object.keys(expState.months), ...Object.keys(expState.income)]);
+      for (const k of ks) await db.doc("expense/m-"+k).set({items:[], income:[]});
+      await db.doc("expense/cats").set({cats:[]});
+    }catch(e){ note("cloud clear failed — local cleared only"); }
+  }
+  try{
+    localStorage.removeItem(LS_KEY);
+    localStorage.removeItem(EXP_LS);
+    localStorage.removeItem(UI_LS);
+  }catch(e){}
+  state = { areas: [], months: {} };
+  expState = { cats: [], months: {}, income: {} };
+  try{ location.reload(); }catch(e){ renderTrack(); }
+}
+(function bindWipe(){
+  const b = document.getElementById("wipeBtn");
+  if (b) b.onclick = wipeAll;
+})();
+
+/* ---------- password gate ----------
+   A privacy curtain, not real security: the page ships to the browser, so
+   anyone determined can read past it. Storing the SHA-256 rather than the
+   password at least keeps the number itself out of the page source.
+   Real protection over the data comes from the sign-in + database rules. */
+const GATE_HASH = "dff17f468fc1f0f0e2511cc45a264c101b4150ec27e063722e94216d3b70b34c";
+const GATE_KEY  = "5minritual-unlocked";
+
+async function sha256(s){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+function openGate(){
+  const g = document.getElementById("gate");
+  if (g) g.classList.add("done");
+}
+(function gateInit(){
+  const g = document.getElementById("gate");
+  if (!g) return;
+  let unlocked = false;
+  try{ unlocked = localStorage.getItem(GATE_KEY) === GATE_HASH; }catch(e){}
+  if (unlocked){ openGate(); return; }
+  const pw = document.getElementById("gatePw");
+  setTimeout(()=>{ try{ pw.focus(); }catch(e){} }, 60);
+  document.getElementById("gateForm").onsubmit = async e=>{
+    e.preventDefault();
+    const err = document.getElementById("gateErr");
+    let h = "";
+    try{ h = await sha256(pw.value); }
+    catch(_){ err.textContent = "This browser blocked the check."; return; }
+    if (h !== GATE_HASH){
+      err.textContent = "Not that one.";
+      pw.value = ""; pw.focus();
+      return;
+    }
+    err.textContent = "";
+    try{ localStorage.setItem(GATE_KEY, GATE_HASH); }catch(e){}
+    openGate();
+  };
+})();
+
+/* ---------- theme switch ----------
+   No stamp means "follow the system". Once you pick, the choice is stamped on
+   the root and remembered in this browser; the CSS is written so an explicit
+   choice beats the OS setting in either direction. */
+const THEME_KEY = "lifetracker-theme";
+const SUN = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.4v2.3M12 19.3v2.3M2.4 12h2.3M19.3 12h2.3M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"/></svg>';
+const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.6A8.7 8.7 0 1 1 9.4 3.5a7 7 0 0 0 11.1 11.1Z"/></svg>';
+
+function currentTheme(){
+  const t = document.documentElement.getAttribute("data-theme");
+  if (t === "dark" || t === "light") return t;
+  return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+function paintThemeBtn(){
+  const b = document.getElementById("themeBtn");
+  if (!b) return;
+  const dark = currentTheme() === "dark";
+  b.innerHTML = dark ? SUN : MOON;
+  b.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode");
+  b.title = dark ? "Light mode" : "Dark mode";
+}
+function setTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  try{ localStorage.setItem(THEME_KEY, t); }catch(e){}
+  paintThemeBtn();
+}
+document.getElementById("themeBtn").onclick = ()=> setTheme(currentTheme()==="dark" ? "light" : "dark");
+// while still on "follow the system", track OS changes live
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ()=>{
+  if (!document.documentElement.hasAttribute("data-theme")) paintThemeBtn();
+});
+paintThemeBtn();
+
+/* ---------- brand motion ----------
+   The mark turns as you scroll and does one whole revolution per checkbox.
+   Every resting position is a multiple of 360°, so it always comes back to
+   exactly where it started — the motion is visible, the end state never drifts. */
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const markEl = document.getElementById("mark");
+let rotScroll = 0, rotTick = 0, rotNow = 0, spinning = false, settleTimer = null;
+
+function paintMark(){
+  if (!markEl) return;
+  const target = rotScroll + rotTick;
+  if (REDUCED){ rotNow = target; markEl.style.transform = `rotate(${target}deg)`; spinning = false; return; }
+  rotNow += (target - rotNow) * 0.11;
+  if (Math.abs(target - rotNow) > 0.08){
+    markEl.style.transform = `rotate(${rotNow.toFixed(2)}deg)`;
+    requestAnimationFrame(paintMark);
+  } else {
+    rotNow = target;
+    markEl.style.transform = `rotate(${target}deg)`;
+    spinning = false;
+  }
+}
+function kickMark(){ if (!spinning){ spinning = true; requestAnimationFrame(paintMark); } }
+
+addEventListener("scroll", ()=>{
+  rotScroll = window.scrollY * 0.22;
+  kickMark();
+  // when scrolling stops, ease to the nearest whole turn so it lands home
+  clearTimeout(settleTimer);
+  settleTimer = setTimeout(()=>{ rotScroll = Math.round(rotScroll/360)*360; kickMark(); }, 240);
+}, {passive:true});
+
+// one full revolution per tick — ends on the same orientation it began
+function tickSpin(){ rotTick += 360; kickMark(); }
+
+/* ---------- boot screen ---------- */
+const boot = document.getElementById("boot");
+let bootReady = false, bootShown = 0, bootGone = false;
+(function bootWord(){
+  const el = document.getElementById("bword");
+  if (!el) return;
+  "5MINRITUAL".split("").forEach((c,i)=>{
+    const s = document.createElement("span");
+    s.textContent = c;
+    s.style.animationDelay = (0.03*i + 0.05) + "s";
+    el.appendChild(s);
+  });
+})();
+function dismissBoot(){
+  if (bootGone || !boot) return;
+  bootGone = true;
+  boot.classList.add("done");
+  setTimeout(()=>{ boot.style.display = "none"; }, REDUCED ? 0 : 760);
+}
+(function bootTick(){
+  if (!boot) return;
+  const t0 = performance.now();
+  const step = now=>{
+    const el = (now - t0)/1000;
+    // climb to 92% on a timer, then run to 100 once the data is actually in
+    const ceiling = bootReady ? 100 : 92;
+    const paced = Math.min(ceiling, el/0.9*92);
+    bootShown = Math.max(bootShown, bootReady ? Math.min(100, bootShown + 4.5) : paced);
+    const p = Math.round(bootShown);
+    document.getElementById("bootPct").textContent = String(p).padStart(2,"0");
+    document.getElementById("bootBar").style.width = p + "%";
+    if (p >= 100 || el > 4){ setTimeout(dismissBoot, 160); return; }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+})();
+
+/* ---------- persistence ---------- */
+function note(m){ document.getElementById("syncnote").textContent = m; }
+function lsSave(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
+function lsLoad(){ try{ const s = localStorage.getItem(LS_KEY); return s ? JSON.parse(s) : null; }catch(e){ return null; } }
+function snapData(s){
+  if (s == null) return null;
+  if (typeof s.data === "function"){
+    try{ if (s.exists === false || (typeof s.exists === "function" && !s.exists())) return null; }catch(e){}
+    try{ return s.data() || null; }catch(e){ return null; }
+  }
+  if (typeof s === "object" && s.data && typeof s.data === "object") return s.data;
+  return typeof s === "object" ? s : null;
+}
+function debounce(k,fn,ms){ clearTimeout(saveTimers[k]); saveTimers[k] = setTimeout(fn,ms); }
+function persistConfig(){
+  lsSave();
+  debounce("cfg", async ()=>{
+    if (!db) return;
+    try{ await db.doc("tracker/config").set({areas: state.areas, schema: 2}); note("saved"); }
+    catch(e){ note("saved on this device only"); }
+  }, 400);
+}
+function persistMonth(key){
+  lsSave();
+  debounce("m-"+key, async ()=>{
+    if (!db) return;
+    const d = monthDoc(key,true);
+    try{ await db.doc("tracker/m-"+key).set({weeks:d.weeks, monthly:d.monthly}); note("saved"); }
+    catch(e){ note("saved on this device only"); }
+  }, 500);
+}
+function normalize(d){
+  return {weeks: (d && d.weeks) || {}, monthly: (d && d.monthly) || {}};
+}
+async function loadMonth(key){
+  if (!db) return;
+  try{
+    const d = snapData(await db.doc("tracker/m-"+key).get());
+    if (d) state.months[key] = normalize(d);
+  }catch(e){}
+}
+async function loadAllMonths(){
+  if (!db || loadedAll) return;
+  let ok = false;
+  try{
+    const res = await db.collection("tracker").get();
+    const docs = Array.isArray(res) ? res : (res && Array.isArray(res.docs) ? res.docs : []);
+    docs.forEach(doc=>{
+      const id = doc && (doc.id || (doc.data && doc.data.id));
+      if (!id || String(id).slice(0,2) !== "m-") return;
+      const data = typeof doc.data === "function" ? doc.data() : (doc.data || doc);
+      state.months[String(id).slice(2)] = normalize(data);
+      ok = true;
+    });
+    loadedAll = docs.length > 0;
+  }catch(e){}
+  if (!loadedAll){
+    let k = monthKeyOfDate(today());
+    for (let i=0;i<12;i++){ await loadMonth(k); k = shiftMonth(k,-1); }
+    loadedAll = true;
+  }
+  lsSave();
+}
+
+async function init(){
+  view = monthKeyOfDate(today());
+  const cached = lsLoad();
+  if (cached && Array.isArray(cached.areas)){
+    state.areas = cached.areas;
+    state.months = (cached.months && typeof cached.months === "object") ? cached.months : {};
+  }
+  // expense module: own cache, own keys
+  try{
+    const ec = JSON.parse(localStorage.getItem(EXP_LS) || "null");
+    if (ec && typeof ec === "object"){
+      expState.cats = Array.isArray(ec.cats) ? ec.cats : [];
+      expState.months = (ec.months && typeof ec.months === "object") ? ec.months : {};
+      expState.income = (ec.income && typeof ec.income === "object") ? ec.income : {};
+    }
+  }catch(e){}
+  // restore which module and which toggle you were last on
+  let ui = null;
+  try{ ui = JSON.parse(localStorage.getItem(UI_LS) || "null"); }catch(e){}
+  if (ui){
+    if (ui.habitTab === "report") tab = "report";
+    if (ui.expTab === "track") expTab = "track";
+    if (ui.expView) expView = ui.expView;
+  }
+  setExpTab(expTab);
+  setTab(tab);
+  setMod(ui && ui.mod === "exp" ? "exp" : "habit");
+    db = null;   // the cloud layer attaches on sign-in, below
+  if (!db){ bootReady = true; note("not signed in — changes stay in this browser"); return; }
+  try{
+    const cfg = snapData(await db.doc("tracker/config").get());
+    if (cfg && Array.isArray(cfg.areas)) state.areas = cfg.areas;
+    await loadMonth(view);
+    lsSave();
+    await expLoadAll();
+    if (mod === "exp") renderExp();
+    else (tab==="track" ? renderTrack : renderReport)();
+    note("synced");
+  }catch(e){ note("saved on this device only"); }
+  bootReady = true;
+  try{
+    db.doc("tracker/config").onSnapshot(s=>{
+      const d = snapData(s);
+      if (d && Array.isArray(d.areas) && JSON.stringify(d.areas) !== JSON.stringify(state.areas)){
+        state.areas = d.areas; lsSave();
+        (tab==="track" ? renderTrack : renderReport)();
+      }
+    });
+  }catch(e){}
+}
+/* ================================================================
+   CLOUD LAYER — Firestore + Google sign-in.
+   Presents the same tiny interface the persistence code already uses
+   (doc().get/.set/.onSnapshot, collection().get), so nothing above changes.
+   Signed out, the app runs entirely on localStorage.
+   ================================================================ */
+let cloudUid = null;
+
+function cloudAdapter(fb, uid){
+  // "tracker/config" -> users/<uid>/tracker/config
+  const ref = p => {
+    const parts = p.split("/");
+    let r = fb.doc(fb.store, "users", uid);
+    for (let i = 0; i < parts.length; i += 2) r = fb.doc(r, parts[i], parts[i+1]);
+    return r;
+  };
+  return {
+    doc: p => ({
+      get: () => fb.getDoc(ref(p)),
+      set: d => fb.setDoc(ref(p), d),
+      onSnapshot: cb => fb.onSnapshot(ref(p), cb)
+    }),
+    collection: async_p => ({
+      get: async () => {
+        const snap = await fb.getDocs(fb.collection(fb.store, "users", uid, async_p));
+        return { docs: snap.docs.map(d => ({ id: d.id, data: () => d.data() })) };
+      }
+    })
+  };
+}
+
+// first sign-in with an empty cloud: push whatever is already on this device
+async function cloudSeedIfEmpty(){
+  const cfg = snapData(await db.doc("tracker/config").get());
+  if (cfg) return false;
+  if (state.areas.length) await db.doc("tracker/config").set({areas: state.areas, schema: 2});
+  for (const k of Object.keys(state.months)){
+    const d = state.months[k] || {};
+    await db.doc("tracker/m-"+k).set({weeks: d.weeks || {}, monthly: d.monthly || {}});
+  }
+  if (expState.cats.length) await db.doc("expense/cats").set({cats: expState.cats});
+  const keys = new Set([...Object.keys(expState.months), ...Object.keys(expState.income)]);
+  for (const k of keys) await db.doc("expense/m-"+k).set({items: expMonth(k), income: incMonth(k)});
+  return true;
+}
+
+async function cloudResync(){
+  if (!db) return;
+  try{
+    const seeded = await cloudSeedIfEmpty();
+    const cfg = snapData(await db.doc("tracker/config").get());
+    if (cfg && Array.isArray(cfg.areas)) state.areas = cfg.areas;
+    await loadMonth(view);
+    loadedAll = false;
+    await expLoadAll();
+    lsSave(); expLsSave();
+    if (mod === "exp") renderExp();
+    else (tab === "track" ? renderTrack : renderReport)();
+    note(seeded ? "this device's data uploaded — synced" : "synced");
+    try{
+      db.doc("tracker/config").onSnapshot(s=>{
+        const d = snapData(s);
+        if (d && Array.isArray(d.areas) && JSON.stringify(d.areas) !== JSON.stringify(state.areas)){
+          state.areas = d.areas; lsSave();
+          if (mod === "habit") (tab === "track" ? renderTrack : renderReport)();
+        }
+      });
+    }catch(e){}
+  }catch(e){ note("cloud unreachable — saved on this device"); }
+}
+
+function paintAuthBtn(fb, user){
+  const b = document.getElementById("authBtn");
+  if (!b) return;
+  if (!fb){ b.textContent = "Cloud not configured"; b.disabled = true; b.title =
+    "Paste your Firebase config into index.html to turn on syncing"; return; }
+  b.disabled = false;
+  b.textContent = user ? "Sign out" : "Sign in to sync";
+  b.title = user ? ("Signed in as " + (user.email || user.displayName || "you")) : "Sync across your devices";
+  b.onclick = async ()=>{
+    try{
+      if (user) await fb.signOut(fb.auth);
+      else await fb.signInWithPopup(fb.auth, new fb.GoogleAuthProvider());
+    }catch(e){ note("sign-in was cancelled or blocked"); }
+  };
+}
+
+(async function cloudBoot(){
+  const fb = await window.__fbReady;
+  paintAuthBtn(fb, null);
+  if (!fb){ note("running locally — changes stay in this browser"); return; }
+  fb.onAuthStateChanged(fb.auth, async user=>{
+    paintAuthBtn(fb, user);
+    if (user){
+      cloudUid = user.uid;
+      db = cloudAdapter(fb, user.uid);
+      note("connecting…");
+      await cloudResync();
+    } else {
+      cloudUid = null; db = null;
+      note("not signed in — changes stay in this browser");
+    }
+  });
+})();
+
+init();
+</script>
+<script type="module">
+/* Firebase project: minritual-aeba2
+   These values are public identifiers, not secrets — firestore.rules is
+   what protects the data. Analytics is deliberately not loaded. */
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyA2sv0NcG2iTLF0aqRD6qNJ4SR9xygxlTo",
+  authDomain:        "minritual-aeba2.firebaseapp.com",
+  projectId:         "minritual-aeba2",
+  appId:             "1:509670804216:web:830d1f140a18a2c458090d"
+};
+
+// bump this if the SDK URL ever 404s
+const SDK = "12.18.0";
+
+if (String(FIREBASE_CONFIG.apiKey).startsWith("PASTE_")){
+  console.warn("[5minritual] Firebase config not filled in — running local-only.");
+  window.__fbResolve(null);
+} else {
+  try{
+    const base = "https://www.gstatic.com/firebasejs/" + SDK + "/";
+    const [appMod, fsMod, authMod] = await Promise.all([
+      import(base + "firebase-app.js"),
+      import(base + "firebase-firestore.js"),
+      import(base + "firebase-auth.js")
+    ]);
+    const app  = appMod.initializeApp(FIREBASE_CONFIG);
+    const auth = authMod.getAuth(app);
+    // keeps you signed in between visits
+    await authMod.setPersistence(auth, authMod.browserLocalPersistence).catch(()=>{});
+    window.__fbResolve({
+      store: fsMod.getFirestore(app),
+      doc: fsMod.doc, collection: fsMod.collection,
+      getDoc: fsMod.getDoc, getDocs: fsMod.getDocs,
+      setDoc: fsMod.setDoc, onSnapshot: fsMod.onSnapshot,
+      auth,
+      GoogleAuthProvider: authMod.GoogleAuthProvider,
+      signInWithPopup: authMod.signInWithPopup,
+      signOut: authMod.signOut,
+      onAuthStateChanged: authMod.onAuthStateChanged
+    });
+  }catch(e){
+    console.error("[5minritual] Firebase failed to load:", e);
+    window.__fbResolve(null);
+  }
+}
+</script>
+</body>
+</html>
