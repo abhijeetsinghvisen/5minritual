@@ -2188,19 +2188,58 @@ async function cloudResync(){
   }catch(e){ note("cloud unreachable — saved on this device"); }
 }
 
+function authFail(err){
+  const code = (err && err.code) || String(err || "unknown");
+  console.error("[5minritual] sign-in failed:", code, err);
+  if (code.includes("unauthorized-domain"))
+    note('add "' + location.hostname + '" to Firebase - Authentication - Settings - Authorised domains');
+  else if (code.includes("operation-not-allowed") || code.includes("configuration-not-found"))
+    note("turn on Google in Firebase - Authentication - Sign-in method");
+  else if (code.includes("popup-closed-by-user") || code.includes("cancelled-popup-request"))
+    note("sign-in was closed before finishing");
+  else if (code.includes("network-request-failed"))
+    note("no connection to Google");
+  else note("sign-in failed: " + code);
+}
+
 function paintAuthBtn(fb, user){
   const b = document.getElementById("authBtn");
   if (!b) return;
-  if (!fb){ b.textContent = "Cloud not configured"; b.disabled = true; b.title =
-    "Paste your Firebase config into index.html to turn on syncing"; return; }
+  if (!fb){
+    b.textContent = "Cloud unavailable"; b.disabled = true;
+    b.title = "Firebase did not load - see the browser console";
+    return;
+  }
+  // Google sign-in needs a real web origin; it cannot work from a local file
+  if (location.protocol === "file:"){
+    b.textContent = "Host it to sync"; b.disabled = true;
+    b.title = "Google sign-in needs a hosted page, not a file:// address";
+    note("opened as a local file - sign-in needs the hosted URL");
+    return;
+  }
   b.disabled = false;
   b.textContent = user ? "Sign out" : "Sign in to sync";
   b.title = user ? ("Signed in as " + (user.email || user.displayName || "you")) : "Sync across your devices";
   b.onclick = async ()=>{
+    if (user){
+      try{ await fb.signOut(fb.auth); }catch(e){ authFail(e); }
+      return;
+    }
+    note("opening Google sign-in...");
     try{
-      if (user) await fb.signOut(fb.auth);
-      else await fb.signInWithPopup(fb.auth, new fb.GoogleAuthProvider());
-    }catch(e){ note("sign-in was cancelled or blocked"); }
+      await fb.signInWithPopup(fb.auth, new fb.GoogleAuthProvider());
+    }catch(err){
+      const code = (err && err.code) || "";
+      // popups are routinely blocked, especially on phones - fall back to a redirect
+      if (/popup-blocked|popup-closed-by-user|cancelled-popup-request|operation-not-supported/.test(code)){
+        try{
+          note("popup blocked - redirecting to Google...");
+          await fb.signInWithRedirect(fb.auth, new fb.GoogleAuthProvider());
+          return;
+        }catch(e2){ authFail(e2); return; }
+      }
+      authFail(err);
+    }
   };
 }
 
@@ -2208,6 +2247,8 @@ function paintAuthBtn(fb, user){
   const fb = await window.__fbReady;
   paintAuthBtn(fb, null);
   if (!fb){ note("running locally — changes stay in this browser"); return; }
+  // completes a sign-in that went via redirect, and surfaces its errors
+  try{ await fb.getRedirectResult(fb.auth); }catch(e){ authFail(e); }
   fb.onAuthStateChanged(fb.auth, async user=>{
     paintAuthBtn(fb, user);
     if (user){
@@ -2261,6 +2302,8 @@ if (String(FIREBASE_CONFIG.apiKey).startsWith("PASTE_")){
       auth,
       GoogleAuthProvider: authMod.GoogleAuthProvider,
       signInWithPopup: authMod.signInWithPopup,
+      signInWithRedirect: authMod.signInWithRedirect,
+      getRedirectResult: authMod.getRedirectResult,
       signOut: authMod.signOut,
       onAuthStateChanged: authMod.onAuthStateChanged
     });
