@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>5minritual</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-  html { color-scheme: light dark; }
+  html { color-scheme: light dark; -webkit-text-size-adjust: 100%; }
   body { margin: 0; }
   img { max-width: 100%; }
   /* the app drives every view, toggle and form off the hidden attribute */
@@ -80,6 +80,37 @@ try{
   --focus:var(--neon); --on-accent:var(--on-neon);
 }
 *{box-sizing:border-box}
+/* ---- motion ----
+   Colour-bearing surfaces transition, so switching module or theme fades
+   between palettes instead of snapping. Custom properties themselves don't
+   animate, but the properties reading them do. */
+body,.area,.panel,.esec,.pcard,.scorecard,.tabs,.tabs button,.btn,.tbtn,.modbtn,.iconbtn,
+.cbx,.pbox,.pmini button,.cell,.res i,.pill,.wdot,.mv,.reccell,.bar i,.ctrack i,.dowbars i,
+.erow,.eday-btn,.cbar,.prow,.mrow2,.dnav,.wstrip button,input,select,textarea,
+.eform,.gform input,.sw,.pip,.tag,.chip .pill{
+  transition:background-color .3s ease,border-color .3s ease,color .3s ease,
+             box-shadow .3s ease,fill .3s ease,opacity .2s ease}
+.mk .ring,.mk .tk{transition:stroke .3s ease}
+h1 .accent,.etot,.verdict,.cg-trail,.flame,.status,.pnm em .hit{transition:color .3s ease}
+
+/* view / mode entrance */
+@keyframes enterUp{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.fadein{animation:enterUp .34s cubic-bezier(.16,1,.3,1) both}
+
+/* the box you just tapped, and only that one */
+@keyframes popIn{0%{transform:scale(.82)}55%{transform:scale(1.14)}100%{transform:scale(1)}}
+@keyframes popOut{0%{transform:scale(1.1)}100%{transform:scale(1)}}
+.justOn{animation:popIn .28s cubic-bezier(.34,1.4,.64,1)}
+.justOff{animation:popOut .2s ease}
+
+button,.prow,.cbx,.pbox,.wstrip button,.eday-btn,.cbar{touch-action:manipulation}
+.btn:active,.tbtn:active,.arw:active{transform:scale(.97)}
+.pbox:active{transform:scale(.92)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important}
+}
 body{background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif;margin:0;padding:24px 20px 80px}
 .wrap{max-width:1560px;margin:0 auto}
 h1{font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:26px;letter-spacing:-.01em;margin:0;text-transform:uppercase}
@@ -431,7 +462,42 @@ tr.taskrow:hover .rowtools{opacity:1}
   .gridwrap{padding:2px 0}
   .panel{padding:14px 15px 16px}
   .esec-head,.erow,.eday-btn,.eday-add,.cbar{padding-left:15px;padding-right:15px}
+
+  /* 16px stops iOS zooming the page when a field takes focus */
+  input,select,textarea,.efield input,.efield select{font-size:16px}
+
+  /* category rows stacked, so the amount can never run off the edge */
+  .cbar{grid-template-columns:minmax(0,1fr) auto;row-gap:8px;column-gap:10px;align-items:baseline}
+  .cbar .cnm{grid-area:1/1;white-space:normal}
+  .cbar .camt{grid-area:1/2;min-width:0;text-align:right;font-size:14px}
+  .cbar .ctrack{grid-area:2/1/3/3;height:9px}
+  .cbar .cpc{grid-area:3/1/4/3;text-align:left;min-width:0}
+
+  /* loss attribution likewise */
+  .attrrow{grid-template-columns:minmax(0,1fr) auto;row-gap:7px}
+  .attrrow .nm{grid-area:1/1}
+  .attrrow .n{grid-area:1/2}
+  .attrrow .bar{grid-area:2/1/3/3}
+
+  /* expense rows: never let the amount be squeezed out */
+  .erow{grid-template-columns:minmax(0,1fr) auto auto;column-gap:9px}
+  .eamt{font-size:14px}
+  .etot{font-size:20px}
+  .emonthnav .elabel{min-width:0;flex:1;font-size:15px}
+  .emonthnav{width:100%}
+  .esec-head{gap:10px}
+  .esec-head>div{min-width:0}
+
+  /* nothing may push the page sideways */
+  body{overflow-x:hidden}
+  .wrap{max-width:100%}
+  table,.rec{max-width:100%}
+
+  /* bottom bar */
+  #phoneBar{display:flex;gap:10px;justify-content:center;margin-top:18px}
+  #phoneBar .btn{flex:1;max-width:220px;padding:12px 16px;font-size:13px}
 }
+#phoneBar{display:none}
 
 /* ================= EXPENSE MODULE ================= */
 /* module switch — always names the module you are not in, in that module's colour */
@@ -627,6 +693,9 @@ tr.taskrow:hover .rowtools{opacity:1}
   <div id="viewExpTrack" hidden></div>
 
   <div class="syncnote" id="syncnote"></div>
+  <div id="phoneBar">
+    <button class="btn" id="pRefresh" type="button">Refresh</button>
+  </div>
   <div class="sig">built by abhijeetsinghvisen</div>
   <button class="wipe" id="wipeBtn" type="button">Reset all data</button>
 </div>
@@ -828,6 +897,11 @@ const esc = s => String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"
    Two renderers. The desktop one (renderTrackWide) is exactly as it was.
    On a narrow screen the day view takes over: one tappable row per task
    for a single day, with arrows and a week strip to move around. */
+// remembers only the box you just tapped, so a re-render doesn't re-animate
+// every already-ticked box on the screen
+let lastTick = null;
+const tickMark = k => { const hit = lastTick && lastTick.k === k; return hit ? (lastTick.on ? " justOn" : " justOff") : ""; };
+
 const PHONE_MQ = matchMedia("(max-width: 760px)");
 const isPhone = () => PHONE_MQ.matches;
 let dayView = null, phoneManage = false;
@@ -931,7 +1005,7 @@ function renderTrackDay(){
       return `<button class="prow" type="button" data-ptick="${t.id}" data-pmon="${ymd(mon)}" data-pd="${di}"
         aria-pressed="${on}">
         <span class="pnm"><b>${esc(t.name)}</b><em>${meta}</em></span>
-        <span class="pbox ${on?"on":""}">${TICK}</span></button>`;
+        <span class="pbox ${on?"on":""}${tickMark(t.id+":"+di)}">${TICK}</span></button>`;
     }).join("");
 
     const mrows = monthly.map(t=>{
@@ -939,7 +1013,7 @@ function renderTrackDay(){
       return `<div class="pmonth">
         <span class="pnm"><b>${esc(t.name)}</b><em>${done?`<span class="hit">done · ${cnt}/${t.target} this month</span>`:`${cnt} of ${t.target} this month`}</em></span>
         <span class="pmini">${Array.from({length:t.target},(_,i)=>
-          `<button type="button" class="${arr[i]?"on":""}" data-pmtick="${t.id}" data-pmi="${i}"
+          `<button type="button" class="${arr[i]?"on":""}${tickMark("m:"+t.id+":"+i)}" data-pmtick="${t.id}" data-pmi="${i}"
             aria-pressed="${!!arr[i]}" aria-label="${esc(t.name)} ${i+1} of ${t.target}">${TICK}</button>`).join("")}</span>
       </div>`;
     }).join("");
@@ -986,6 +1060,7 @@ function renderTrackDay(){
     ${isToday ? "" : `<p class="pfoot"><button class="btn" type="button" data-pday="${ymd(today())}">Back to today</button></p>`}`;
 
   bindTrackDay();
+  lastTick = null;
 }
 
 function bindTrackDay(){
@@ -1005,6 +1080,7 @@ function bindTrackDay(){
     const arr = weekArr(view, mon, b.dataset.ptick, true);
     const i = +b.dataset.pd;
     arr[i] = !arr[i];
+    lastTick = {k: b.dataset.ptick+":"+i, on: arr[i]};
     tickSpin(); persistMonth(view); renderTrackDay();
   });
   document.querySelectorAll("[data-pmtick]").forEach(b=>b.onclick = ()=>{
@@ -1013,6 +1089,7 @@ function bindTrackDay(){
     const arr = monthlyArr(view, found.t, true);
     const i = +b.dataset.pmi;
     arr[i] = !arr[i];
+    lastTick = {k: "m:"+b.dataset.pmtick+":"+i, on: arr[i]};
     tickSpin(); persistMonth(view); renderTrackDay();
   });
 }
@@ -1065,7 +1142,7 @@ function renderArea(a, weeks){
     if (isMonthly(t)){
       const arr = readMonthly(view,t), cnt = monthlyCount(view,t), done = cnt>=t.target;
       const boxes = Array.from({length:t.target},(_,i)=>
-        `<button class="cbx ${arr[i]?"on":""}" data-task="${t.id}" data-m="${i}" aria-label="${esc(t.name)} — completion ${i+1} of ${t.target}" aria-pressed="${!!arr[i]}">${TICK}</button>`
+        `<button class="cbx ${arr[i]?"on":""}${tickMark("m:"+t.id+":"+i)}" data-task="${t.id}" data-m="${i}" aria-label="${esc(t.name)} — completion ${i+1} of ${t.target}" aria-pressed="${!!arr[i]}">${TICK}</button>`
       ).join("");
       return `<tr class="taskrow">${nameCell(t)}
         <td class="mrow" colspan="${weeks.length*9}"><div class="inner">${boxes}
@@ -1078,7 +1155,7 @@ function renderArea(a, weeks){
       return `<td class="wkgap"></td>` +
         [0,1,2,3,4,5,6].map(d=>{
           const dt = addDays(mon,d), isToday = ymd(dt)===ymd(today());
-          return `<td class="${isToday?"today-cell":""}"><button class="cbx ${arr[d]?"on":""}" data-task="${t.id}" data-mon="${ymd(mon)}" data-d="${d}" aria-label="${esc(t.name)} — ${DAYFULL[d]} ${dt.getDate()} ${MSHORT[dt.getMonth()]}" aria-pressed="${!!arr[d]}">${TICK}</button></td>`;
+          return `<td class="${isToday?"today-cell":""}"><button class="cbx ${arr[d]?"on":""}${tickMark(t.id+":"+(weeks.indexOf(mon)*7+d))}" data-task="${t.id}" data-mon="${ymd(mon)}" data-d="${d}" aria-label="${esc(t.name)} — ${DAYFULL[d]} ${dt.getDate()} ${MSHORT[dt.getMonth()]}" aria-pressed="${!!arr[d]}">${TICK}</button></td>`;
         }).join("") +
         `<td class="wcell"><span class="wdot ${shown}" title="${cnt} of ${t.target}">${st==="win"?"W":st==="loss"?"L":st==="near"?"−1":cnt+"/"+t.target}</span></td>`;
     }).join("");
@@ -1122,7 +1199,9 @@ function bindTrack(){
   document.querySelectorAll("[data-mon]").forEach(b=>b.onclick = ()=>{
     const mon = new Date(b.dataset.mon+"T00:00:00");
     const arr = weekArr(view, mon, b.dataset.task, true);
-    arr[+b.dataset.d] = !arr[+b.dataset.d];
+    const di2 = +b.dataset.d;
+    arr[di2] = !arr[di2];
+    lastTick = {k: b.dataset.task+":"+(monthWeeks(view).findIndex(m=>ymd(m)===b.dataset.mon)*7+di2), on: arr[di2]};
     tickSpin();
     persistMonth(view); renderTrack();
   });
@@ -1132,6 +1211,7 @@ function bindTrack(){
     const arr = monthlyArr(view, found.t, true);
     const i = +b.dataset.m;
     arr[i] = !arr[i];
+    lastTick = {k: "m:"+b.dataset.task+":"+i, on: arr[i]};
     tickSpin();
     persistMonth(view); renderTrack();
   });
@@ -2074,6 +2154,7 @@ function setExpTab(t){
   document.getElementById("viewExpRecord").hidden = t!=="record";
   document.getElementById("viewExpTrack").hidden = t!=="track";
   uiSave(); renderExp();
+  flashIn(document.getElementById(t==="record" ? "viewExpRecord" : "viewExpTrack"));
 }
 function setMod(m){
   mod = m;
@@ -2083,7 +2164,7 @@ function setMod(m){
 
   // the button always points at the module you are not in, in that module's colour
   const b = document.getElementById("modBtn");
-  b.textContent = isExp ? "5minritual" : "Expense Tracker";
+  b.textContent = isExp ? "Life Tracker" : "Expense Tracker";
   b.className = "modbtn " + (isExp ? "to-habit" : "to-exp");
 
   document.getElementById("tabsHabit").hidden = isExp;
@@ -2096,10 +2177,49 @@ function setMod(m){
 
   uiSave();
   if (isExp) renderExp(); else (tab==="track" ? renderTrack : renderReport)();
+  flashIn(document.getElementById(isExp
+    ? (expTab==="record" ? "viewExpRecord" : "viewExpTrack")
+    : (tab==="track" ? "viewTrack" : "viewReport")));
 }
 document.getElementById("modBtn").onclick = ()=> setMod(mod==="exp" ? "habit" : "exp");
 document.getElementById("tabRecord").onclick = ()=> setExpTab("record");
 document.getElementById("tabSpend").onclick = ()=> setExpTab("track");
+
+/* ---------- pull fresh data (phone bottom bar) ---------- */
+async function phoneRefresh(){
+  const b = document.getElementById("pRefresh");
+  const restore = ()=>{ if (b){ b.disabled = false; b.textContent = "Refresh"; } };
+  if (b){ b.disabled = true; b.textContent = "Refreshing…"; }
+  if (!db){
+    note("not signed in — nothing to pull");
+    restore();
+    return;
+  }
+  try{
+    const cfg = snapData(await db.doc("tracker/config").get());
+    if (cfg && Array.isArray(cfg.areas)) state.areas = cfg.areas;
+    loadedAll = false;
+    await loadMonth(view);
+    await loadAllMonths();
+    await expLoadAll();
+    lsSave(); expLsSave();
+    note("up to date");
+  }catch(e){ note("refresh failed — showing local copy"); }
+  restore();
+  if (mod === "exp") renderExp(); else renderTrack();
+}
+(function bindRefresh(){
+  const b = document.getElementById("pRefresh");
+  if (b) b.onclick = phoneRefresh;
+})();
+
+/* fade a view in when you switch to it, without touching its contents */
+function flashIn(el){
+  if (!el) return;
+  el.classList.remove("fadein");
+  void el.offsetWidth;
+  el.classList.add("fadein");
+}
 
 /* ---------- reset everything ----------
    Clears this browser's copy AND the synced copy, so the data cannot simply
