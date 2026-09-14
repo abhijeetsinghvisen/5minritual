@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>5minritual</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   html { color-scheme: light dark; -webkit-text-size-adjust: 100%; }
   body { margin: 0; }
@@ -29,49 +29,60 @@ try{
 </head>
 <body>
 <style>
-/* Black-and-white with one red accent, in both directions. The accent is the
-   same #FF4438 on either ground. Red carries achievement: solid = won,
-   hollow = missed by one, grey = missed, hairline = never tracked.
-   Light lives on bare :root; dark is redefined twice so the viewer's OS
-   setting and an explicit theme choice both win in their own direction. */
+/* The app shares the landing page's visual system.
+   Light: cool newsprint ground, white cards, true-black ink, cobalt signal.
+   Dark:  ink ground (not pure black), lifted panels, softened cobalt.
+   Cobalt carries achievement in the habit module; jade takes over in the
+   expense module. Danger (errors, overspend) is a separate oxide red.
+   Light lives on bare :root; dark is redefined twice so the OS setting and
+   an explicit theme choice both win in their own direction. */
 :root{
   color-scheme:light dark;
-  --red:#FF4438; --neon:#00B84A; --neon-bg:#E6F9ED; --on-neon:#04140A;
-  --accent:var(--red); --accent-soft:#FFA6A0; --good:#12A150;
-  --bg:#FFFFFF; --surface:#FFFFFF; --surface2:#F7F7F7; --surface3:#EDEDED;
-  --ink:#0E0E0E; --muted:#767676; --line:#E5E5E5; --line-strong:#C6C6C6;
-  --win:#FF4438; --win-bg:#FFECEA;
-  --loss:#0E0E0E; --loss-bg:#E2E2E2;
-  --near:#FF4438; --near-line:#FF4438;
-  --check:#FF4438; --check-empty:#FFFFFF; --today:#FFF4F2; --today-line:#FF4438;
-  --focus:#FF4438; --on-accent:#FFFFFF;
+  --cobalt:#1B48E0; --cobalt-dk:#1236AE;
+  --neon:#0E7C54; --neon-bg:#DEEFE7; --on-neon:#FFFFFF;
+  --danger:#A8352B;
+  --red:var(--cobalt);                       /* legacy name: the habit module's colour */
+  --accent:var(--cobalt); --accent-soft:#A9B9F2; --good:#0E7C54;
+  --bg:#F2F0EB; --surface:#FFFFFF; --surface2:#EAE7E0; --surface3:#E0DCD3;
+  --ink:#0D0D0F; --muted:#6B6B73; --line:#DBD7CF; --line-strong:#C7C2B8;
+  --win:var(--cobalt); --win-bg:#E2E6FB;
+  --loss:#0D0D0F; --loss-bg:#E4E0D8;
+  --near:var(--cobalt); --near-line:var(--cobalt);
+  --check:var(--cobalt); --check-empty:#F4F3F0; --today:#E2E6FB; --today-line:var(--cobalt);
+  --focus:var(--cobalt); --on-accent:#FFFFFF;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --red:#FF4438; --neon:#2BFF88; --neon-bg:#082617; --on-neon:#04140A;
-  --accent:var(--red); --accent-soft:#A6382F; --good:#35D07C;
-    --bg:#000000; --surface:#0B0B0B; --surface2:#171717; --surface3:#212121;
-    --ink:#F2F2F2; --muted:#8A8A8A; --line:#242424; --line-strong:#3C3C3C;
-    --win:#FF4438; --win-bg:#2B0E0B;
-    --loss:#F2F2F2; --loss-bg:#242424;
-    --near:#FF4438; --near-line:#FF4438;
-    --check:#FF4438; --check-empty:#000000; --today:#1E0907; --today-line:#FF4438;
-    --focus:#FF4438; --on-accent:#FFFFFF;
+    --cobalt:#7E9BFF; --cobalt-dk:#5D7EF0;
+    --neon:#3BCF93; --neon-bg:#0E2A1F; --on-neon:#04140A;
+    --danger:#E3897E;
+    --red:var(--cobalt);
+    --accent:var(--cobalt); --accent-soft:#3A4C8F; --good:#3BCF93;
+    --bg:#0D0D0F; --surface:#16161A; --surface2:#1C1C20; --surface3:#24242A;
+    --ink:#EDEAE3; --muted:#8E8A82; --line:#26262A; --line-strong:#3A3A40;
+    --win:var(--cobalt); --win-bg:#17224A;
+    --loss:#EDEAE3; --loss-bg:#242428;
+    --near:var(--cobalt); --near-line:var(--cobalt);
+    --check:var(--cobalt); --check-empty:#1C1C20; --today:#17224A; --today-line:var(--cobalt);
+    --focus:var(--cobalt); --on-accent:#0D0D0F;
   }
 }
 :root[data-theme="dark"]{
-  --red:#FF4438; --neon:#2BFF88; --neon-bg:#082617; --on-neon:#04140A;
-  --accent:var(--red); --accent-soft:#A6382F; --good:#35D07C;
-  --bg:#000000; --surface:#0B0B0B; --surface2:#171717; --surface3:#212121;
-  --ink:#F2F2F2; --muted:#8A8A8A; --line:#242424; --line-strong:#3C3C3C;
-  --win:#FF4438; --win-bg:#2B0E0B;
-  --loss:#F2F2F2; --loss-bg:#242424;
-  --near:#FF4438; --near-line:#FF4438;
-  --check:#FF4438; --check-empty:#000000; --today:#1E0907; --today-line:#FF4438;
-  --focus:#FF4438; --on-accent:#FFFFFF;
+  --cobalt:#7E9BFF; --cobalt-dk:#5D7EF0;
+  --neon:#3BCF93; --neon-bg:#0E2A1F; --on-neon:#04140A;
+  --danger:#E3897E;
+  --red:var(--cobalt);
+  --accent:var(--cobalt); --accent-soft:#3A4C8F; --good:#3BCF93;
+  --bg:#0D0D0F; --surface:#16161A; --surface2:#1C1C20; --surface3:#24242A;
+  --ink:#EDEAE3; --muted:#8E8A82; --line:#26262A; --line-strong:#3A3A40;
+  --win:var(--cobalt); --win-bg:#17224A;
+  --loss:#EDEAE3; --loss-bg:#242428;
+  --near:var(--cobalt); --near-line:var(--cobalt);
+  --check:var(--cobalt); --check-empty:#1C1C20; --today:#17224A; --today-line:var(--cobalt);
+  --focus:var(--cobalt); --on-accent:#0D0D0F;
 }
-/* Inside the expense module the accent flips to neon green. Only the accent
-   tokens move — the ground, type and greys stay exactly as they are. */
+/* Inside the expense module the accent becomes jade. Only the accent tokens
+   move — the ground, type and greys stay exactly as they are. */
 :root[data-mod="exp"]{
   --accent:var(--neon); --accent-soft:var(--neon);
   --win:var(--neon); --win-bg:var(--neon-bg);
@@ -113,7 +124,7 @@ button,.prow,.cbx,.pbox,.wstrip button,.eday-btn,.cbar{touch-action:manipulation
 }
 body{background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif;margin:0;padding:24px 20px 80px}
 .wrap{max-width:1560px;margin:0 auto}
-h1{font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:26px;letter-spacing:-.01em;margin:0;text-transform:uppercase}
+h1{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:25px;letter-spacing:-.035em;margin:0;text-transform:none}
 h1 .accent{color:var(--accent)}
 
 /* ---- brand mark: quarter-gap ring + tick. Rotates with scroll, and a
@@ -129,14 +140,14 @@ h1 .accent{color:var(--accent)}
   align-items:center;justify-content:center;gap:20px;padding:24px}
 #gate.done{display:none}
 #gate .gmark{width:52px;height:52px}
-#gate .gword{font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:clamp(26px,6vw,40px);
-  text-transform:uppercase;letter-spacing:-.02em;line-height:1;margin:0}
+#gate .gword{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(26px,6vw,40px);
+  text-transform:none;letter-spacing:-.04em;line-height:1;margin:0}
 #gate .gword .accent{color:var(--accent)}
 .gform{display:flex;flex-direction:column;gap:10px;width:100%;max-width:270px}
 .gform input{width:100%;text-align:center;font-family:"IBM Plex Mono";font-size:17px;letter-spacing:.28em;
   padding:11px 12px}
 .gform button{width:100%}
-.gerr{font-family:"IBM Plex Mono";font-size:11.5px;color:var(--red);text-align:center;min-height:16px}
+.gerr{font-family:"IBM Plex Mono";font-size:11.5px;color:var(--danger);text-align:center;min-height:16px}
 .ghint{font-family:"IBM Plex Mono";font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--muted);text-align:center}
 
@@ -147,8 +158,8 @@ h1 .accent{color:var(--accent)}
 #boot .bmark{width:64px;height:64px;animation:spin 1.5s linear infinite}
 #boot .bmark .tk{stroke:var(--muted)}
 @keyframes spin{to{transform:rotate(360deg)}}
-.bword{font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:clamp(30px,7vw,58px);
-  text-transform:uppercase;letter-spacing:-.02em;line-height:1;display:flex;overflow:hidden}
+.bword{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(30px,7vw,58px);
+  text-transform:none;letter-spacing:-.04em;line-height:1;display:flex;overflow:hidden}
 .bword span{display:inline-block;transform:translateY(105%);animation:rise .7s cubic-bezier(.16,1,.3,1) forwards}
 @keyframes rise{to{transform:translateY(0)}}
 .bcount{font-family:"IBM Plex Mono";font-size:12px;letter-spacing:.24em;color:var(--muted);
@@ -165,12 +176,12 @@ h1 .accent{color:var(--accent)}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:0}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 input[type=text],input[type=number],select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:6px;padding:6px 9px}
-h3{font-family:"Archivo";font-weight:800;font-size:15px;margin:0;text-transform:uppercase;letter-spacing:.03em}
+h3{font-family:"Bricolage Grotesque";font-weight:800;font-size:15px;margin:0;text-transform:uppercase;letter-spacing:.03em}
 .sub{font-size:12.5px;color:var(--muted);margin:3px 0 0}
 
 .topbar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px}
-.tabs{display:flex;gap:2px;background:var(--surface2);border-radius:8px;padding:3px;margin-bottom:20px;width:max-content}
-.tabs button{font-family:"Archivo";font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.05em;padding:7px 18px;border-radius:6px;color:var(--muted)}
+.tabs{display:flex;gap:2px;background:var(--surface2);border-radius:999px;padding:3px;margin-bottom:20px;width:max-content}
+.tabs button{font-family:"Bricolage Grotesque";font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.05em;padding:7px 18px;border-radius:999px;color:var(--muted)}
 .tabs button[aria-selected=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.06)}
 .hdr-right{display:flex;align-items:center;gap:14px}
 .tbtn{width:32px;height:32px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);
@@ -179,13 +190,13 @@ h3{font-family:"Archivo";font-weight:800;font-size:15px;margin:0;text-transform:
 .tbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .monthnav{display:flex;align-items:center;gap:10px}
 .monthnav button{width:32px;height:32px;border:1px solid var(--line-strong);border-radius:6px;font-size:16px;line-height:1;background:var(--surface)}
-.monthnav .mlabel{font-family:"Archivo";font-weight:800;font-size:19px;min-width:210px;text-align:center;text-transform:uppercase;letter-spacing:.02em}
+.monthnav .mlabel{font-family:"Bricolage Grotesque";font-weight:800;font-size:19px;min-width:210px;text-align:center;text-transform:uppercase;letter-spacing:.02em}
 .wkcount{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);display:block;text-transform:none;letter-spacing:0;font-weight:400}
 
-.scorecard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:22px;margin-bottom:22px}
+.scorecard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:22px;margin-bottom:22px}
 .scorecard .big{display:flex;flex-direction:column;gap:2px}
 .scorecard .big .lbl{font-family:"IBM Plex Mono";font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.scorecard .big .val{font-family:"Archivo";font-weight:800;font-size:30px;line-height:1.1}
+.scorecard .big .val{font-family:"Bricolage Grotesque";font-weight:800;font-size:30px;line-height:1.1}
 .scorecard .weeks{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
 .verdict.win{color:var(--win)} .verdict.loss{color:var(--loss)} .verdict.open{color:var(--muted)}
 
@@ -196,9 +207,9 @@ h3{font-family:"Archivo";font-weight:800;font-size:15px;margin:0;text-transform:
 .pill.near{background:var(--surface);color:var(--near);box-shadow:inset 0 0 0 1.5px var(--near-line)}
 .pill.open,.pill.none{background:var(--surface2);color:var(--muted)}
 
-.area{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:20px;overflow:hidden}
+.area{background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-bottom:20px;overflow:hidden}
 .area-head{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line)}
-.area-head h2{font-family:"Archivo";font-weight:800;font-size:17px;margin:0;text-transform:uppercase;letter-spacing:.02em}
+.area-head h2{font-family:"Bricolage Grotesque";font-weight:800;font-size:17px;margin:0;text-transform:uppercase;letter-spacing:.02em}
 .mv{font-family:"IBM Plex Mono";font-size:12px;padding:4px 10px;border-radius:99px}
 .mv.win{background:var(--win-bg);color:var(--win)}
 .mv.loss{background:var(--loss-bg);color:var(--loss)}
@@ -254,7 +265,7 @@ tr.taskrow:hover .rowtools{opacity:1}
 .addrow input[type=text]{width:250px}
 .addrow input[type=number]{width:62px}
 .lbl{font-size:13px;color:var(--muted)}
-.btn{background:var(--surface2);border:1px solid var(--line-strong);border-radius:6px;padding:6px 14px;font-weight:500;font-size:13px}
+.btn{background:var(--surface2);border:1px solid var(--line-strong);border-radius:999px;padding:6px 14px;font-weight:500;font-size:13px}
 .btn.primary{background:var(--win);border-color:var(--win);color:#fff}
 .linkbtn{color:var(--muted);font-size:13px;padding:8px 4px}
 .linkbtn:hover{color:var(--ink)}
@@ -265,7 +276,7 @@ tr.taskrow:hover .rowtools{opacity:1}
 .empty{color:var(--muted);padding:18px;text-align:center}
 
 /* ---- report ---- */
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 20px 20px;margin-bottom:20px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 20px 20px;margin-bottom:20px}
 .panel .gridwrap{padding:2px 0 4px}
 .panel-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;margin-bottom:14px}
 .panel-head .spacer{flex:1}
@@ -298,7 +309,7 @@ tr.taskrow:hover .rowtools{opacity:1}
 .cg-name{text-align:left;font-size:13px;white-space:nowrap;padding-right:10px}
 .cg-name em{font-style:normal;font-family:"IBM Plex Mono";font-size:11px;color:var(--muted);margin-left:5px}
 .cg-mhdr{font-family:"IBM Plex Mono";font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;text-align:center;padding-bottom:2px;overflow:hidden;white-space:nowrap}
-.cg-group{grid-column:1/-1;font-family:"Archivo";font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:11px 0 1px}
+.cg-group{grid-column:1/-1;font-family:"Bricolage Grotesque";font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:11px 0 1px}
 .cell{width:100%;height:24px;border-radius:3px;display:block;position:relative}
 .compact .cell{height:19px}
 
@@ -314,7 +325,7 @@ tr.taskrow:hover .rowtools{opacity:1}
 .res.open i{height:34%;background:var(--surface2)}
 .res.none i{height:34%;background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
 .res.off i{height:0}
-.arowlabel{font-family:"Archivo";font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.arowlabel{font-family:"Bricolage Grotesque";font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .cell.win{background:var(--win)}
 .cell.near{background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--near-line)}
 .cell.loss{background:var(--loss-bg)}
@@ -389,12 +400,12 @@ tr.taskrow:hover .rowtools{opacity:1}
   .scorecard .weeks{margin-left:0;width:100%}
 
   .dnav{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);
-    border-radius:10px;padding:8px;margin-bottom:12px}
+    border-radius:14px;padding:8px;margin-bottom:12px}
   .dnav button.arw{width:42px;height:42px;flex:none;border:1px solid var(--line-strong);border-radius:8px;
     font-size:20px;line-height:1;background:var(--surface2);color:var(--ink)}
   .dnav button.arw:disabled{opacity:.3}
   .dlab{flex:1;text-align:center;min-width:0}
-  .dlab b{display:block;font-family:"Archivo";font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:.02em}
+  .dlab b{display:block;font-family:"Bricolage Grotesque";font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:.02em}
   .dlab span{display:block;font-family:"IBM Plex Mono";font-size:10.5px;color:var(--muted);margin-top:2px}
   .dlab .istoday{color:var(--accent)}
 
@@ -402,16 +413,16 @@ tr.taskrow:hover .rowtools{opacity:1}
   .wstrip button{padding:7px 0 6px;border-radius:8px;border:1px solid var(--line);background:var(--surface);
     display:flex;flex-direction:column;align-items:center;gap:3px}
   .wstrip button .wd{font-family:"IBM Plex Mono";font-size:9.5px;color:var(--muted);letter-spacing:.04em}
-  .wstrip button .dt{font-family:"Archivo";font-weight:600;font-size:14px;color:var(--ink)}
+  .wstrip button .dt{font-family:"Bricolage Grotesque";font-weight:600;font-size:14px;color:var(--ink)}
   .wstrip button .dot{width:5px;height:5px;border-radius:50%;background:var(--line-strong)}
   .wstrip button .dot.some{background:var(--accent)}
   .wstrip button .dot.all{background:var(--good)}
   .wstrip button[aria-current=true]{border-color:var(--accent);background:var(--win-bg)}
   .wstrip button.future{opacity:.45}
 
-  .pcard{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:14px;overflow:hidden}
+  .pcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden}
   .pcard header{display:flex;align-items:center;gap:10px;padding:12px 15px;border-bottom:1px solid var(--line)}
-  .pcard header h2{font-family:"Archivo";font-weight:800;font-size:14px;margin:0;text-transform:uppercase;
+  .pcard header h2{font-family:"Bricolage Grotesque";font-weight:800;font-size:14px;margin:0;text-transform:uppercase;
     letter-spacing:.03em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pcard header .wk{font-family:"IBM Plex Mono";font-size:10px;padding:4px 8px;border-radius:99px;white-space:nowrap}
   .pcard header .wk.win{background:var(--win-bg);color:var(--accent)}
@@ -443,7 +454,7 @@ tr.taskrow:hover .rowtools{opacity:1}
 
   /* manage mode: add, rename and remove tasks without a desktop */
   .pbar{display:flex;align-items:center;gap:10px;margin:0 0 12px}
-  .pbar b{flex:1;font-family:"Archivo";font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.05em}
+  .pbar b{flex:1;font-family:"Bricolage Grotesque";font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.05em}
   .pbar .btn{font-size:12px;padding:8px 14px}
   .mrow2{display:flex;align-items:center;gap:6px;padding:12px 15px;border-top:1px solid var(--line)}
   .mrow2:first-of-type{border-top:none}
@@ -501,19 +512,19 @@ tr.taskrow:hover .rowtools{opacity:1}
 
 /* ================= EXPENSE MODULE ================= */
 /* module switch — always names the module you are not in, in that module's colour */
-.modbtn{font-family:"Archivo",system-ui,sans-serif;font-weight:800;font-size:12px;text-transform:uppercase;
+.modbtn{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:12px;text-transform:uppercase;
   letter-spacing:.06em;padding:9px 16px;border-radius:99px;border:1px solid transparent;white-space:nowrap;
   transition:filter .15s,transform .1s}
 .modbtn:hover{filter:brightness(1.08)}
 .modbtn:active{transform:scale(.98)}
 .modbtn.to-exp{background:var(--neon);color:var(--on-neon);border-color:var(--neon)}
-.modbtn.to-habit{background:var(--red);color:#fff;border-color:var(--red)}
+.modbtn.to-habit{background:var(--cobalt);color:var(--on-accent);border-color:var(--cobalt)}
 
-.esec{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:20px;overflow:hidden}
+.esec{background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-bottom:20px;overflow:hidden}
 .esec-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;padding:15px 20px;border-bottom:1px solid var(--line)}
 .esec-head h3{margin:0}
 .esec-head .spacer{flex:1}
-.etot{font-family:"Archivo";font-weight:800;font-size:22px;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.etot{font-family:"Bricolage Grotesque";font-weight:800;font-size:22px;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
 .etot.accent{color:var(--accent)}
 .esub{font-family:"IBM Plex Mono";font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 
@@ -561,7 +572,7 @@ tr.taskrow:hover .rowtools{opacity:1}
 .emonthnav{display:flex;align-items:center;gap:10px}
 .emonthnav button{width:32px;height:32px;border:1px solid var(--line-strong);border-radius:6px;font-size:16px;
   line-height:1;background:var(--surface);color:var(--ink)}
-.emonthnav .elabel{font-family:"Archivo";font-weight:800;font-size:17px;min-width:170px;text-align:center;
+.emonthnav .elabel{font-family:"Bricolage Grotesque";font-weight:800;font-size:17px;min-width:170px;text-align:center;
   text-transform:uppercase;letter-spacing:.02em}
 
 /* add / edit form */
@@ -578,7 +589,7 @@ tr.taskrow:hover .rowtools{opacity:1}
 .eform .row>*{flex:1}
 .eform-actions{display:flex;gap:8px;margin-top:18px;align-items:center}
 .eform-actions .spacer{flex:1}
-.eerr{color:var(--red);font-size:12.5px;margin-top:-4px;margin-bottom:10px;min-height:16px}
+.eerr{color:var(--danger);font-size:12.5px;margin-top:-4px;margin-bottom:10px;min-height:16px}
 .newcat{display:none;gap:8px;margin-top:8px}
 .newcat.show{display:flex}
 .catmgr{padding:6px 20px 16px}
@@ -590,7 +601,7 @@ tr.taskrow:hover .rowtools{opacity:1}
   text-transform:uppercase;color:var(--muted);opacity:.55;margin-top:34px}
 .wipe{display:block;margin:14px auto 0;font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--muted);opacity:.4;padding:6px 10px;border-radius:6px}
-.wipe:hover{opacity:1;color:var(--red)}
+.wipe:hover{opacity:1;color:var(--danger)}
 
 /* ---- accent pass: last so it wins the cascade ---- */
 .pip.on{background:var(--accent)}
@@ -1471,7 +1482,7 @@ function panelRecord(months){
       <p class="sub">A key area wins the month by winning every one of its weeks. Percentages show how close a lost month was.</p></div></div>
     <div class="recgrid"><table class="rec">
       <thead><tr><th>Key area</th>${months.map(k=>`<th>${monthLabel(k,true)}</th>`).join("")}<th>Won</th></tr></thead>
-      <tbody>${rows}<tr style="border-top:2px solid var(--line-strong)"><td style="font-family:Archivo;text-transform:uppercase;font-size:12px;letter-spacing:.05em">Everything</td>${overall}<td></td></tr></tbody>
+      <tbody>${rows}<tr style="border-top:2px solid var(--line-strong)"><td style="font-family:"Bricolage Grotesque";text-transform:uppercase;font-size:12px;letter-spacing:.05em">Everything</td>${overall}<td></td></tr></tbody>
     </table></div></div>`;
 }
 
@@ -1948,7 +1959,7 @@ function renderExpTrack(){
         : `<div class="eempty">No income recorded for ${monthLabel(key,true)}.</div>`}
       ${incTotal(key) ? `<div class="erow" style="border-top:1px solid var(--line-strong)">
         <span class="enm"><b>Left over</b><span class="ecat">income minus spend</span></span>
-        <span class="eamt" style="color:${incTotal(key)-tot >= 0 ? "var(--good)" : "var(--red)"}">${
+        <span class="eamt" style="color:${incTotal(key)-tot >= 0 ? "var(--good)" : "var(--danger)"}">${
           (incTotal(key)-tot < 0 ? "−" : "") + inr(Math.abs(incTotal(key)-tot))}</span>
         <span></span></div>` : ""}
       <div class="eday-add"><button class="btn" id="incAdd">+ Add income</button></div>
@@ -2372,9 +2383,10 @@ let bootReady = false, bootShown = 0, bootGone = false;
 (function bootWord(){
   const el = document.getElementById("bword");
   if (!el) return;
-  "5MINRITUAL".split("").forEach((c,i)=>{
+  "5minritual".split("").forEach((c,i)=>{
     const s = document.createElement("span");
     s.textContent = c;
+    if (i >= 4) s.style.color = "var(--accent)";
     s.style.animationDelay = (0.03*i + 0.05) + "s";
     el.appendChild(s);
   });
